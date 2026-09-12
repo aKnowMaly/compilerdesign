@@ -1,0 +1,2 @@
+CHECK: updated={{.*}}paper/tables/research_evaluation.tex
+CHECK: updated={{.*}}paper/tables/benchmark_metrics.tex

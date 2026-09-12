@@ -1,0 +1,330 @@
+\documentclass[10pt,twocolumn]{article}
+
+\usepackage[a4paper,margin=0.75in]{geometry}
+\usepackage{times}
+\usepackage{microtype}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{booktabs}
+\usepackage{listings}
+\usepackage{xcolor}
+\usepackage[hidelinks]{hyperref}
+
+\lstdefinelanguage{LLVM}{
+  morekeywords={define,declare,ret,br,switch,invoke,call,load,store,alloca,global,internal,private,external,trunc,zext,sext,and,or,select,phi,getelementptr,inbounds},
+  sensitive=true,
+  morecomment=[l]{;}
+}
+\lstset{
+  basicstyle=\ttfamily\footnotesize,
+  columns=fullflexible,
+  breaklines=true,
+  frame=single,
+  language=LLVM
+}
+
+\title{Conservative Adaptive Bit-Width Narrowing for LLVM Memory Objects}
+\author{Anonymous Artifact Draft}
+\date{}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+Integer values stored in memory often occupy fewer significant bits than their
+declared source-level type. While scalar integer narrowing is a familiar
+compiler optimization theme, narrowing memory objects is more delicate because
+the transformation must preserve load/store semantics, pointer use structure,
+and signedness restoration. This paper presents a conservative LLVM New Pass
+Manager prototype, \textsc{AdaptiveWidthMemoryPass}, that narrows selected local
+stack arrays and internal/private globals when all observed stores can be
+classified by local bit-width inference. The pass rewrites memory object element
+types, truncates stores, and restores narrowed loads with either zero-extension
+or sign-extension according to a tracked extension family. Unsupported pointer
+uses, mixed signed/unsigned value families, and unknown stored values are
+rejected rather than speculated on. On the current fixture corpus, the prototype
+identifies 28 memory-object candidates, transforms 20 of them, and records a
+static summed per-element width reduction of 234 bits. On 32 C-derived
+kernels, it transforms 26 memory-object candidates and exposes the expected
+tradeoff between narrower memory and additional cast instructions. These results
+are not presented as general benchmark claims; they establish a reproducible
+artifact and a safety-first baseline for future memory bit-width optimization
+experiments.
+\end{abstract}
+
+\section{Introduction}
+
+Many programs store values in integer containers wider than the value range
+required at a particular program point. Examples include masked counters,
+small enumerations, byte-derived values stored in 16- or 32-bit arrays, and
+sign-extended offsets later stored in wider integer memory. Narrowing such
+memory objects can reduce static storage width and may enable downstream
+optimizations. However, memory narrowing is more constrained than scalar
+narrowing: every load and store must be rewritten consistently, pointer uses may
+escape, and signedness-sensitive values must be restored with the correct
+extension operation.
+
+This work develops a small, inspectable LLVM pass that prioritizes correctness
+and reproducibility over broad coverage. The prototype narrows only integer
+arrays allocated on the stack and internal/private integer globals. It accepts
+only direct pointer uses through getelementptr, load, and store. It performs
+local stored-value inference over constants, casts, masks, simple select/phi/or
+compositions, and LLVM's KnownBits information. If a candidate cannot be proven
+safe and profitable under these rules, it is left unchanged and reported with a
+reason.
+
+The contributions of this draft are:
+\begin{itemize}
+  \item a conservative memory-object narrowing transformation for LLVM IR;
+  \item an explicit extension-family safety policy for zero- and sign-restored
+        loads;
+  \item deterministic candidate classification and rejection logging; and
+  \item a reproducible metrics harness that reports candidate coverage,
+        transformation counts, static width deltas, and IR instruction overhead.
+\end{itemize}
+
+\section{Motivation}
+
+Consider a local array whose stored values are masked before every store:
+
+\begin{lstlisting}
+%arr = alloca [2 x i16]
+%masked = and i16 %x, 31
+store i16 %masked, ptr %slot
+%v = load i16, ptr %slot
+\end{lstlisting}
+
+The stored value needs only five bits. The pass can replace the array with
+\texttt{[2 x i5]}, truncate the store, and zero-extend the load back to the
+original load type:
+
+\begin{lstlisting}
+%arr.narrow = alloca [2 x i5]
+%masked.narrow = trunc i16 %masked to i5
+store i5 %masked.narrow, ptr %slot.narrow
+%v.narrow = load i5, ptr %slot.narrow
+%v.wide = zext i5 %v.narrow to i16
+\end{lstlisting}
+
+For signed byte-derived values, zero-extension is not equivalent. Therefore the
+prototype tracks whether the stored-value family must be restored by
+\texttt{zext} or \texttt{sext}. A candidate containing a mixture of both
+families is rejected.
+
+\section{Safety Model}
+
+Let a candidate memory object have original element type $iN$ and proposed
+narrow element type $iK$ where $K < N$. The transformation is allowed only if:
+
+\begin{enumerate}
+  \item the memory object is a supported stack array or internal/private global;
+  \item all pointer users are recursively limited to supported GEP, load, and
+        store operations;
+  \item every store to the object has an inferred width at most $K$;
+  \item every inferred stored value agrees on one extension family
+        $E \in \{\mathrm{zero}, \mathrm{sign}\}$; and
+  \item the candidate is profitable, i.e., $K < N$.
+\end{enumerate}
+
+Loads from the narrowed object are restored to $iN$ using the selected extension
+family. Thus the intended local preservation condition is:
+
+\[
+  \mathrm{extend}_E(\mathrm{trunc}_K(v)) = v
+\]
+
+for each stored value $v$ that may be loaded from the object. The current
+implementation checks this condition through syntactic and KnownBits-based
+inference rules rather than whole-program analysis. If inference fails, the
+candidate is treated as unknown and is not transformed.
+
+\subsection{Invariant and Preservation Sketch}
+
+For every transformed object $O$, the pass maintains the following local
+invariant: every value stored through a supported pointer path to $O$ belongs to
+one inferred extension family $E$ and has representable width at most $K$, the
+new element width. Because all admitted loads and stores are rewritten through
+the same rebuilt pointer graph, each transformed load observes a value previously
+stored in truncated form. Since the inference phase requires
+$\mathrm{extend}_E(\mathrm{trunc}_K(v)) = v$ for every admitted stored value,
+restoring the narrowed load with $E$ preserves the original loaded value. Cases
+outside this local argument--escaping pointers, unsupported casts, aggregate
+loads, volatile/atomic behavior, unknown values, and mixed extension families--
+are rejected before rewriting.
+
+This is not a whole-program proof. It is a deliberately local preservation
+argument for the subset of LLVM IR accepted by the implementation. The
+deterministic rejection policy is therefore part of the safety model rather than
+an engineering afterthought.
+
+\section{Algorithm and Implementation}
+
+The pass is implemented as an LLVM 18 New Pass Manager plugin. It exposes four
+pipelines: full analysis/transformation, log-only analysis, stack-allocation-only
+transformation, and global-only transformation.
+
+\subsection{Candidate Discovery}
+
+The pass scans functions for local stack integer arrays and scans the module for
+internal/private integer globals. Scalar allocas, floating-point objects,
+external globals, aggregate loads, and pointer escapes are rejected. A recursive
+pointer-user walk admits GEP, load, and store users and records unsupported users
+for diagnostic output.
+
+\subsection{Width Inference}
+
+The inference engine computes a required bit width and an extension family for
+stored values. It currently recognizes:
+
+\begin{itemize}
+  \item integer constants;
+  \item truncation, including C-style \texttt{trunc(and i32 \%x, mask)} forms;
+  \item zero-extension and sign-extension chains;
+  \item constant masks;
+  \item bitwise OR;
+  \item select and bounded phi nodes when all arms agree; and
+  \item LLVM KnownBits as a conservative fallback.
+\end{itemize}
+
+For compositions such as select, phi, and OR, operands must agree on the same
+extension family. This intentionally rejects mixed signed/unsigned candidates.
+
+\subsection{IR Rewriting}
+
+For a profitable candidate, the pass creates a replacement memory object with
+the narrowed integer element type. It rebuilds GEPs using the new source element
+type, rewrites stores by truncating stored values to the new type, rewrites loads
+from the new type, and extends loaded values back to the original type. The old
+load/GEP/object instructions are erased only after their replacements have been
+installed and the resulting IR is verified by the test harness.
+
+\subsection{Transformation Algorithm}
+
+Algorithm~\ref{alg:narrowing} summarizes the pass at a high level. The pass is
+structured as a sequence of filters: candidate discovery, use-graph validation,
+stored-value inference, profitability testing, and finally IR rewriting. This
+ordering is deliberate: it keeps unsound cases outside the rewriting phase and
+makes each rejection observable in the diagnostic log.
+
+\begin{figure}[t]
+\begin{lstlisting}[language={}]
+for object O in stack_arrays + internal_globals:
+  if not integer_memory_object(O):
+    reject(O, "non-integer")
+    continue
+  U = collect_supported_pointer_uses(O)
+  if U has escaping or unsupported users:
+    reject(O, "unsupported-user")
+    continue
+  W, E = infer_width_and_extension(stores(O))
+  if inference failed:
+    reject(O, "unknown-width")
+    continue
+  if W >= original_element_width(O):
+    reject(O, "not-profitable")
+    continue
+  O2 = create_narrow_object(O, W)
+  rewrite_geps_loads_stores(O, O2, E)
+  erase_dead_old_ir(O)
+\end{lstlisting}
+\caption{High-level memory-narrowing algorithm.}
+\label{alg:narrowing}
+\end{figure}
+
+\subsection{Pass Architecture}
+
+The implementation separates four concerns: (1) candidate discovery, (2)
+recursive pointer-use classification, (3) width and extension-family inference,
+and (4) IR rewriting. The metrics harness consumes the same deterministic log
+output used by the tests, so paper tables are generated from the artifact rather
+than manually transcribed.
+
+\section{Evaluation Methodology}
+
+The artifact includes two evaluation layers. First, fixture-level tests exercise
+individual transformation and rejection behaviors. Second, a benchmark-metrics
+harness compiles small C kernels to LLVM IR with Clang 18, applies a light
+\texttt{mem2reg} normalization step to remove irrelevant scalar spills, runs the
+pass, verifies the transformed IR, and emits tab-separated and Markdown results.
+
+Metrics include candidate counts, safety classifications, transformed globals
+and allocas, rewritten loads and stores, static summed per-element bit savings,
+LLVM IR instruction-count delta before and after LLVM default O2, and coarse
+process-level pass wall time. The artifact also generates deterministic runtime
+differential harnesses for each C kernel; baseline and transformed executables
+are compiled and compared on checksum outputs. The wall-time and
+instruction-count metrics are intended for artifact regression tracking, not as
+rigorous performance claims.
+
+\input{tables/research_evaluation}
+\input{tables/benchmark_metrics}
+
+\section{Results}
+
+Table~\ref{tab:fixture-results} shows the fixture-level result. Across seven
+inputs, the pass identifies 28 candidates. It classifies 25 as safe under the
+pointer-use policy and transforms 20 total memory objects: four globals and
+sixteen stack arrays. The fixture corpus intentionally includes unknown-width
+and escaped-pointer cases; these account for the three blocked candidates and
+four unknown-width classifications. The resulting static summed per-element
+width delta is 234 bits.
+
+Table~\ref{tab:benchmark-results} shows the current C-kernel benchmark snapshot.
+The suite includes unsigned mask extraction, pixel-channel packing, packet flag
+decoding, signed offsets, global constants, select-based ranges, and deliberate
+rejection cases. Across 32 kernels, the pass sees 39 memory-object
+candidates, classifies 36 as safe under the use policy, and transforms 26
+objects. The transformed C kernels increase static IR instruction count by 141
+assignments because the pass inserts explicit truncation and extension
+instructions; after LLVM default O2 this overhead falls to four assignments.
+Runtime differential tests compile baseline and transformed versions of all
+32 benchmark harnesses and compare deterministic checksum outputs. All
+32 currently match, providing a practical behavioral sanity check in
+addition to LLVM verifier checks. This does not replace formal proof or large
+input-space testing, but it strengthens the artifact-level evidence for the
+current benchmark suite.
+
+\section{Limitations}
+
+The current prototype is intentionally narrow. It does not handle arbitrary
+pointer aliasing, external globals, scalar allocas, bitcast/address-space-cast
+rewrite cases, aggregate loads, volatile or atomic semantics, interprocedural
+effects, or broad arithmetic range inference. The current evaluation uses small
+fixtures and kernels rather than external benchmark suites. Therefore the
+reported numbers establish correctness and reproducibility of the artifact, not
+general application-level memory or performance improvements.
+
+\section{Related Work}
+
+The implementation builds on LLVM's modular pass infrastructure
+\cite{lattner2004llvm} and uses LLVM IR semantics as the transformation target.
+Its inference style is related to classic data-flow and abstract-interpretation
+ideas \cite{cousot1977abstract}, and to compiler propagation analyses such as
+conditional constant propagation \cite{wegman1991sccp}. The use of LLVM
+KnownBits connects the prototype to existing value-tracking infrastructure.
+Unlike scalar-only simplifications, this work focuses specifically on narrowing
+memory object element types while preserving load/store behavior.
+
+\section{Future Work}
+
+Future work should scale the metrics harness to larger benchmark suites,
+measure optimized machine-code effects after downstream LLVM passes, support
+additional safe pointer-use patterns, extend arithmetic range inference, and add
+runtime differential testing for transformed kernels. Another important
+direction is comparing memory-object narrowing against scalar bit-width
+optimizations to determine when memory rewriting provides unique benefits.
+
+\section{Conclusion}
+
+This draft presented a conservative LLVM prototype for adaptive bit-width
+narrowing of selected memory objects. The pass combines local stored-value
+inference, explicit signedness restoration, conservative pointer-use filtering,
+and deterministic reporting. The current results show that the implementation
+can safely transform targeted fixture and C-derived kernels while preserving a
+clear rejection policy. The artifact is now positioned for broader benchmark
+evaluation and iterative paper development.
+
+\bibliographystyle{plain}
+\bibliography{references}
+
+\end{document}

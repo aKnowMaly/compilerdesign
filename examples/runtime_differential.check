@@ -1,0 +1,5 @@
+CHECK: summary={{.*}}build/runtime-differential/summary.md
+CHECK: report={{.*}}build/runtime-differential/runtime-differential.tsv
+CHECK: ir={{.*}}build/runtime-differential/ir
+CHECK: bin={{.*}}build/runtime-differential/bin
+CHECK: logs={{.*}}build/runtime-differential/logs

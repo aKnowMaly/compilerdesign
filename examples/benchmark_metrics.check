@@ -1,0 +1,6 @@
+CHECK: summary={{.*}}build/benchmark-metrics/summary.md
+CHECK: report={{.*}}build/benchmark-metrics/benchmark-metrics.tsv
+CHECK: ir={{.*}}build/benchmark-metrics/ir
+CHECK: transformed_ir={{.*}}build/benchmark-metrics/transformed-ir
+CHECK: optimized_ir={{.*}}build/benchmark-metrics/optimized-ir
+CHECK: logs={{.*}}build/benchmark-metrics/logs

@@ -1,0 +1,45 @@
+\begin{table*}[t]
+\centering
+\caption{C-kernel benchmark metrics. Raw IR delta is measured immediately after rewriting; optimized IR delta is measured after LLVM default O2 on baseline and transformed IR.}
+\label{tab:benchmark-results}
+\begin{tabular}{lrrrrrrrr}
+\hline
+Benchmark & Cand. & Safe & Blocked & Trans. & R/W & Raw $\Delta$ & O2 $\Delta$ & Bits \\
+\hline
+alias\_pointer\_reject & 1 & 0 & 1 & 0 & 0 & +0 & +0 & 0 \\
+alpha\_blend\_weights & 1 & 1 & 0 & 1 & 7 & +7 & +0 & 8 \\
+checksum\_nibbles & 1 & 1 & 0 & 1 & 8 & +8 & +0 & 12 \\
+embedded\_counters & 1 & 1 & 0 & 1 & 8 & +8 & +0 & 11 \\
+fir4\_coefficients & 1 & 1 & 0 & 1 & 8 & +4 & +0 & 13 \\
+global\_constants & 3 & 2 & 1 & 2 & 2 & +2 & +0 & 25 \\
+global\_flag\_table & 3 & 3 & 0 & 3 & 3 & +3 & +0 & 42 \\
+global\_lookup\_small & 1 & 1 & 0 & 0 & 0 & +0 & +0 & 0 \\
+grayscale\_threshold & 1 & 1 & 0 & 1 & 8 & +8 & +0 & 8 \\
+ipv4\_header\_fields & 1 & 1 & 0 & 1 & 8 & +8 & +0 & 8 \\
+mixed\_signed\_reject & 1 & 1 & 0 & 0 & 0 & +0 & +0 & 0 \\
+moving\_average4 & 1 & 1 & 0 & 1 & 8 & +8 & +0 & 6 \\
+overflow\_uncertainty & 1 & 1 & 0 & 0 & 0 & +0 & +0 & 0 \\
+packet\_flags & 1 & 1 & 0 & 1 & 8 & +8 & +0 & 11 \\
+pixel\_channels & 1 & 1 & 0 & 1 & 8 & +8 & +0 & 8 \\
+protocol\_version\_table & 1 & 1 & 0 & 1 & 8 & +8 & +0 & 11 \\
+quantized\_filter & 1 & 1 & 0 & 1 & 6 & +6 & +0 & 9 \\
+rejection\_cases & 3 & 2 & 1 & 0 & 0 & +0 & +0 & 0 \\
+rgb565\_unpack & 1 & 1 & 0 & 1 & 6 & +6 & +0 & 10 \\
+saturating\_sensor & 1 & 1 & 0 & 1 & 4 & +4 & +0 & 7 \\
+select\_ranges & 1 & 1 & 0 & 1 & 4 & +4 & +4 & 10 \\
+sensor\_bucket & 1 & 1 & 0 & 1 & 4 & +4 & +0 & 6 \\
+signed\_delta\_pair & 1 & 1 & 0 & 1 & 4 & +4 & +0 & 8 \\
+signed\_offsets & 1 & 1 & 0 & 1 & 4 & +4 & +0 & 8 \\
+signed\_select\_offsets & 1 & 1 & 0 & 0 & 0 & +0 & +0 & 0 \\
+signed\_state\_delta & 1 & 1 & 0 & 0 & 0 & +0 & +0 & 0 \\
+small\_state\_machine & 1 & 1 & 0 & 1 & 6 & +6 & +0 & 13 \\
+status\_flags & 1 & 1 & 0 & 1 & 6 & +6 & +0 & 13 \\
+tcp\_flag\_decode & 1 & 1 & 0 & 1 & 12 & +12 & +0 & 15 \\
+unsigned\_histogram & 2 & 2 & 0 & 1 & 5 & +5 & +0 & 9 \\
+volatile\_reject & 1 & 1 & 0 & 0 & 0 & +0 & +0 & 0 \\
+wide\_unknown\_reject & 1 & 1 & 0 & 0 & 0 & +0 & +0 & 0 \\
+\hline
+Total & 39 & 36 & 3 & 26 & 145 & +141 & +4 & 271 \\
+\hline
+\end{tabular}
+\end{table*}

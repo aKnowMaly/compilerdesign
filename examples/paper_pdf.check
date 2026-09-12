@@ -1,0 +1,1 @@
+CHECK: output={{.*}}output/pdf/adaptive-width-memory-narrowing-paper.pdf

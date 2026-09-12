@@ -1,0 +1,20 @@
+\begin{table*}[t]
+\centering
+\caption{Fixture-level evaluation summary. The bit-savings column is a static per-element width delta summed across transformed candidates, not a measured runtime memory-footprint reduction.}
+\label{tab:fixture-results}
+\begin{tabular}{lrrrrrrrr}
+\hline
+Input & Cand. & Safe & Blocked & Unknown & Trans. G & Trans. A & Loads & Bits \\
+\hline
+candidates & 10 & 8 & 2 & 2 & 2 & 3 & 2 & 67 \\
+transform\_alloca & 7 & 7 & 0 & 2 & 0 & 5 & 2 & 50 \\
+inference & 6 & 6 & 0 & 0 & 0 & 6 & 5 & 59 \\
+stack\_positive & 1 & 1 & 0 & 0 & 0 & 1 & 1 & 11 \\
+globals.example & 2 & 2 & 0 & 0 & 2 & 0 & 2 & 36 \\
+masked\_stack.example & 1 & 1 & 0 & 0 & 0 & 1 & 1 & 11 \\
+rejected\_escape.example & 1 & 0 & 1 & 0 & 0 & 0 & 0 & 0 \\
+\hline
+Total & 28 & 25 & 3 & 4 & 4 & 0 & 13 & 234 \\
+\hline
+\end{tabular}
+\end{table*}

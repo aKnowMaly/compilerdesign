@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="900" height="280" viewBox="0 0 900 280">
+  <style>
+    .panel { fill:#f8fafc; stroke:#94a3b8; stroke-width:2; rx:12; }
+    .title { font-family:Arial, sans-serif; font-size:20px; font-weight:bold; fill:#1f2937; text-anchor:middle; }
+    .code { font-family:Consolas, monospace; font-size:17px; fill:#111827; }
+    .arrow { stroke:#334155; stroke-width:3; marker-end:url(#arrow); }
+  </style>
+  <defs>
+    <marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto">
+      <path d="M0,0 L0,6 L9,3 z" fill="#334155"/>
+    </marker>
+  </defs>
+  <rect x="30" y="35" width="350" height="205" class="panel"/>
+  <text x="205" y="70" class="title">Before</text>
+  <text x="65" y="110" class="code">arr = alloca [2 x i16]</text>
+  <text x="65" y="140" class="code">masked = and i16 x, 31</text>
+  <text x="65" y="170" class="code">store i16 masked, slot</text>
+  <text x="65" y="200" class="code">v = load i16, slot</text>
+  <line x1="395" y1="137" x2="505" y2="137" class="arrow"/>
+  <rect x="520" y="35" width="350" height="205" class="panel"/>
+  <text x="695" y="70" class="title">After</text>
+  <text x="550" y="110" class="code">arr.narrow = alloca [2 x i5]</text>
+  <text x="550" y="140" class="code">n = trunc i16 masked to i5</text>
+  <text x="550" y="170" class="code">store i5 n, slot.narrow</text>
+  <text x="550" y="200" class="code">v.wide = zext load i5 to i16</text>
+</svg>

@@ -1,0 +1,33 @@
+benchmark	category	intent
+alpha_blend_weights	image_pixel	alpha blending bounded channel values
+grayscale_threshold	image_pixel	grayscale threshold over byte pixels
+pixel_channels	image_pixel	RGBA byte channel extraction
+rgb565_unpack	image_pixel	RGB565 bit-field unpacking
+packet_flags	packet_header	packet metadata bit masks
+checksum_nibbles	packet_header	nibble checksum extraction
+ipv4_header_fields	packet_header	IPv4-style bounded header fields
+tcp_flag_decode	packet_header	TCP-style one-bit flag decoding
+protocol_version_table	packet_header	protocol version and field extraction
+fir4_coefficients	dsp_signal	small FIR-style bounded coefficients
+moving_average4	dsp_signal	bounded moving average samples
+quantized_filter	dsp_signal	quantized two-input filter
+saturating_sensor	embedded_state	saturating bounded sensor bucket
+embedded_counters	embedded_state	small bounded event counters
+status_flags	embedded_state	status flag packing
+sensor_bucket	embedded_state	sensor bucket extraction
+small_state_machine	embedded_state	bounded state/event transition
+signed_offsets	signed_values	sign-preserving offset table
+signed_delta_pair	signed_values	signed delta pair
+signed_select_offsets	signed_values	signed select rejection/coverage
+signed_state_delta	signed_values	signed state delta
+global_constants	lookup_global	internal scalar constants
+global_flag_table	lookup_global	internal flag constants
+global_lookup_small	lookup_global	internal global lookup table
+mixed_signed_reject	rejection	mixed signedness candidate
+rejection_cases	rejection	escaping pointer and unknown cases
+wide_unknown_reject	rejection	unknown wide arithmetic range
+volatile_reject	rejection	volatile memory pattern
+alias_pointer_reject	rejection	unsupported pointer alias pattern
+overflow_uncertainty	rejection	overflow/range uncertainty
+select_ranges	unsigned_ranges	select of bounded unsigned values
+unsigned_histogram	unsigned_ranges	unsigned stack histogram

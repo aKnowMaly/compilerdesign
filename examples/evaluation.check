@@ -1,0 +1,4 @@
+CHECK: summary={{.*}}build/research-evaluation/summary.md
+CHECK: report={{.*}}build/research-evaluation/adaptive-width-report.tsv
+CHECK: transformed_ir={{.*}}build/research-evaluation/transformed-ir
+CHECK: logs={{.*}}build/research-evaluation/logs
