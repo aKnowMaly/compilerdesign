@@ -1,0 +1,10 @@
+{
+  "comparisons": 91,
+  "passed": 91,
+  "failed": 0,
+  "objects": 23,
+  "summed_binary_size_delta_bytes": 0,
+  "positive_binary_size_deltas": 0,
+  "zero_binary_size_deltas": 91,
+  "negative_binary_size_deltas": 0
+}

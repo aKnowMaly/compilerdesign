@@ -1,0 +1,697 @@
+{
+  "objects": 23,
+  "target_object_observations": 69,
+  "cross_target_classifications": {
+    "neutral": 20,
+    "target-specific-regression": 2,
+    "consistent-improvement": 1
+  },
+  "target_summary": {
+    "x86_64": {
+      "objects": 23,
+      "width_changed_objects": 17,
+      "outcomes": {
+        "neutral": 20,
+        "regressed": 2,
+        "improved": 1
+      },
+      "summed_isolated_machine_instruction_delta": 2,
+      "summed_isolated_text_byte_delta": 18,
+      "tti_prediction": {
+        "true_positive": 1,
+        "false_positive": 14,
+        "true_negative": 8,
+        "false_negative": 0,
+        "precision": 0.06666666666666667,
+        "recall": 1.0
+      },
+      "o2_assignment_prediction": {
+        "true_positive": 1,
+        "false_positive": 0,
+        "true_negative": 22,
+        "false_negative": 0,
+        "precision": 1.0,
+        "recall": 1.0
+      },
+      "tti_machine_delta_pearson": 0.03926457994057454,
+      "o2_assignment_machine_delta_pearson": 0.6614921932639395
+    },
+    "aarch64": {
+      "objects": 23,
+      "width_changed_objects": 17,
+      "outcomes": {
+        "neutral": 21,
+        "improved": 1,
+        "regressed": 1
+      },
+      "summed_isolated_machine_instruction_delta": -1,
+      "summed_isolated_text_byte_delta": -4,
+      "tti_prediction": {
+        "true_positive": 1,
+        "false_positive": 14,
+        "true_negative": 8,
+        "false_negative": 0,
+        "precision": 0.06666666666666667,
+        "recall": 1.0
+      },
+      "o2_assignment_prediction": {
+        "true_positive": 1,
+        "false_positive": 0,
+        "true_negative": 22,
+        "false_negative": 0,
+        "precision": 1.0,
+        "recall": 1.0
+      },
+      "tti_machine_delta_pearson": 0.0813169751694234,
+      "o2_assignment_machine_delta_pearson": 0.8097931629376581
+    },
+    "riscv64": {
+      "objects": 23,
+      "width_changed_objects": 17,
+      "outcomes": {
+        "neutral": 22,
+        "improved": 1
+      },
+      "summed_isolated_machine_instruction_delta": -6,
+      "summed_isolated_text_byte_delta": -14,
+      "tti_prediction": {
+        "true_positive": 1,
+        "false_positive": 14,
+        "true_negative": 8,
+        "false_negative": 0,
+        "precision": 0.06666666666666667,
+        "recall": 1.0
+      },
+      "o2_assignment_prediction": {
+        "true_positive": 1,
+        "false_positive": 0,
+        "true_negative": 22,
+        "false_negative": 0,
+        "precision": 1.0,
+        "recall": 1.0
+      },
+      "tti_machine_delta_pearson": 0.033228888017745054,
+      "o2_assignment_machine_delta_pearson": 0.9708384870409897
+    }
+  },
+  "objects_detail": [
+    {
+      "object_id": "alpha_blend_weights:alloca:alloca-0",
+      "benchmark": "alpha_blend_weights",
+      "category": "image_pixel",
+      "kind": "alloca",
+      "original_bits": 16,
+      "w_min": 8,
+      "method_c_bits": 8,
+      "allocation_equivalent_widths": 1,
+      "cross_target_class": "neutral",
+      "target_outcomes": {
+        "x86_64": "neutral",
+        "aarch64": "neutral",
+        "riscv64": "neutral"
+      },
+      "machine_instruction_deltas": {
+        "x86_64": 0,
+        "aarch64": 0,
+        "riscv64": 0
+      },
+      "text_byte_deltas": {
+        "x86_64": 0,
+        "aarch64": 0,
+        "riscv64": 0
+      }
+    },
+    {
+      "object_id": "checksum_nibbles:alloca:alloca-0",
+      "benchmark": "checksum_nibbles",
+      "category": "packet_header",
+      "kind": "alloca",
+      "original_bits": 16,
+      "w_min": 4,
+      "method_c_bits": 8,
+      "allocation_equivalent_widths": 5,
+      "cross_target_class": "neutral",
+      "target_outcomes": {
+        "x86_64": "neutral",
+        "aarch64": "neutral",
+        "riscv64": "neutral"
+      },
+      "machine_instruction_deltas": {
+        "x86_64": 0,
+        "aarch64": 0,
+        "riscv64": 0
+      },
+      "text_byte_deltas": {
+        "x86_64": 0,
+        "aarch64": 0,
+        "riscv64": 0
+      }
+    },
+    {
+      "object_id": "embedded_counters:alloca:alloca-0",
+      "benchmark": "embedded_counters",
+      "category": "embedded_state",
+      "kind": "alloca",
+      "original_bits": 16,
+      "w_min": 5,
+      "method_c_bits": 8,
+      "allocation_equivalent_widths": 4,
+      "cross_target_class": "neutral",
+      "target_outcomes": {
+        "x86_64": "neutral",
+        "aarch64": "neutral",
+        "riscv64": "neutral"
+      },
+      "machine_instruction_deltas": {
+        "x86_64": 0,
+        "aarch64": 0,
+        "riscv64": 0
+      },
+      "text_byte_deltas": {
+        "x86_64": 0,
+        "aarch64": 0,
+        "riscv64": 0
+      }
+    },
+    {
+      "object_id": "fir4_coefficients:alloca:alloca-0",
+      "benchmark": "fir4_coefficients",
+      "category": "dsp_signal",
+      "kind": "alloca",
+      "original_bits": 16,
+      "w_min": 3,
+      "method_c_bits": 8,
+      "allocation_equivalent_widths": 6,
+      "cross_target_class": "neutral",
+      "target_outcomes": {
+        "x86_64": "neutral",
+        "aarch64": "neutral",
+        "riscv64": "neutral"
+      },
+      "machine_instruction_deltas": {
+        "x86_64": 0,
+        "aarch64": 0,
+        "riscv64": 0
+      },
+      "text_byte_deltas": {
+        "x86_64": 0,
+        "aarch64": 0,
+        "riscv64": 0
+      }
+    },
+    {
+      "object_id": "global_constants:global:lut_a",
+      "benchmark": "global_constants",
+      "category": "lookup_global",
+      "kind": "global",
+      "original_bits": 16,
+      "w_min": 3,
+      "method_c_bits": 8,
+      "allocation_equivalent_widths": 6,
+      "cross_target_class": "neutral",
+      "target_outcomes": {
+        "x86_64": "neutral",
+        "aarch64": "neutral",
+        "riscv64": "neutral"
+      },
+      "machine_instruction_deltas": {
+        "x86_64": 0,
+        "aarch64": 0,
+        "riscv64": 0
+      },
+      "text_byte_deltas": {
+        "x86_64": 0,
+        "aarch64": 0,
+        "riscv64": 0
+      }
+    },
+    {
+      "object_id": "global_constants:global:lut_b",
+      "benchmark": "global_constants",
+      "category": "lookup_global",
+      "kind": "global",
+      "original_bits": 16,
+      "w_min": 4,
+      "method_c_bits": 8,
+      "allocation_equivalent_widths": 5,
+      "cross_target_class": "neutral",
+      "target_outcomes": {
+        "x86_64": "neutral",
+        "aarch64": "neutral",
+        "riscv64": "neutral"
+      },
+      "machine_instruction_deltas": {
+        "x86_64": 0,
+        "aarch64": 0,
+        "riscv64": 0
+      },
+      "text_byte_deltas": {
+        "x86_64": 0,
+        "aarch64": 0,
+        "riscv64": 0
+      }
+    },
+    {
+      "object_id": "global_flag_table:global:flags_a",
+      "benchmark": "global_flag_table",
+      "category": "lookup_global",
+      "kind": "global",
+      "original_bits": 16,
+      "w_min": 1,
+      "method_c_bits": 8,
+      "allocation_equivalent_widths": 8,
+      "cross_target_class": "neutral",
+      "target_outcomes": {
+        "x86_64": "neutral",
+        "aarch64": "neutral",
+        "riscv64": "neutral"
+      },
+      "machine_instruction_deltas": {
+        "x86_64": 0,
+        "aarch64": 0,
+        "riscv64": 0
+      },
+      "text_byte_deltas": {
+        "x86_64": 0,
+        "aarch64": 0,
+        "riscv64": 0
+      }
+    },
+    {
+      "object_id": "global_flag_table:global:flags_b",
+      "benchmark": "global_flag_table",
+      "category": "lookup_global",
+      "kind": "global",
+      "original_bits": 16,
+      "w_min": 2,
+      "method_c_bits": 8,
+      "allocation_equivalent_widths": 7,
+      "cross_target_class": "neutral",
+      "target_outcomes": {
+        "x86_64": "neutral",
+        "aarch64": "neutral",
+        "riscv64": "neutral"
+      },
+      "machine_instruction_deltas": {
+        "x86_64": 0,
+        "aarch64": 0,
+        "riscv64": 0
+      },
+      "text_byte_deltas": {
+        "x86_64": 0,
+        "aarch64": 0,
+        "riscv64": 0
+      }
+    },
+    {
+      "object_id": "global_flag_table:global:flags_c",
+      "benchmark": "global_flag_table",
+      "category": "lookup_global",
+      "kind": "global",
+      "original_bits": 16,
+      "w_min": 3,
+      "method_c_bits": 8,
+      "allocation_equivalent_widths": 6,
+      "cross_target_class": "neutral",
+      "target_outcomes": {
+        "x86_64": "neutral",
+        "aarch64": "neutral",
+        "riscv64": "neutral"
+      },
+      "machine_instruction_deltas": {
+        "x86_64": 0,
+        "aarch64": 0,
+        "riscv64": 0
+      },
+      "text_byte_deltas": {
+        "x86_64": 0,
+        "aarch64": 0,
+        "riscv64": 0
+      }
+    },
+    {
+      "object_id": "grayscale_threshold:alloca:alloca-0",
+      "benchmark": "grayscale_threshold",
+      "category": "image_pixel",
+      "kind": "alloca",
+      "original_bits": 16,
+      "w_min": 8,
+      "method_c_bits": 8,
+      "allocation_equivalent_widths": 1,
+      "cross_target_class": "neutral",
+      "target_outcomes": {
+        "x86_64": "neutral",
+        "aarch64": "neutral",
+        "riscv64": "neutral"
+      },
+      "machine_instruction_deltas": {
+        "x86_64": 0,
+        "aarch64": 0,
+        "riscv64": 0
+      },
+      "text_byte_deltas": {
+        "x86_64": 0,
+        "aarch64": 0,
+        "riscv64": 0
+      }
+    },
+    {
+      "object_id": "ipv4_header_fields:alloca:alloca-0",
+      "benchmark": "ipv4_header_fields",
+      "category": "packet_header",
+      "kind": "alloca",
+      "original_bits": 16,
+      "w_min": 8,
+      "method_c_bits": 8,
+      "allocation_equivalent_widths": 1,
+      "cross_target_class": "neutral",
+      "target_outcomes": {
+        "x86_64": "neutral",
+        "aarch64": "neutral",
+        "riscv64": "neutral"
+      },
+      "machine_instruction_deltas": {
+        "x86_64": 0,
+        "aarch64": 0,
+        "riscv64": 0
+      },
+      "text_byte_deltas": {
+        "x86_64": 0,
+        "aarch64": 0,
+        "riscv64": 0
+      }
+    },
+    {
+      "object_id": "packet_flags:alloca:alloca-0",
+      "benchmark": "packet_flags",
+      "category": "packet_header",
+      "kind": "alloca",
+      "original_bits": 16,
+      "w_min": 5,
+      "method_c_bits": 8,
+      "allocation_equivalent_widths": 4,
+      "cross_target_class": "neutral",
+      "target_outcomes": {
+        "x86_64": "neutral",
+        "aarch64": "neutral",
+        "riscv64": "neutral"
+      },
+      "machine_instruction_deltas": {
+        "x86_64": 0,
+        "aarch64": 0,
+        "riscv64": 0
+      },
+      "text_byte_deltas": {
+        "x86_64": 0,
+        "aarch64": 0,
+        "riscv64": 0
+      }
+    },
+    {
+      "object_id": "pixel_channels:alloca:alloca-0",
+      "benchmark": "pixel_channels",
+      "category": "image_pixel",
+      "kind": "alloca",
+      "original_bits": 16,
+      "w_min": 8,
+      "method_c_bits": 8,
+      "allocation_equivalent_widths": 1,
+      "cross_target_class": "neutral",
+      "target_outcomes": {
+        "x86_64": "neutral",
+        "aarch64": "neutral",
+        "riscv64": "neutral"
+      },
+      "machine_instruction_deltas": {
+        "x86_64": 0,
+        "aarch64": 0,
+        "riscv64": 0
+      },
+      "text_byte_deltas": {
+        "x86_64": 0,
+        "aarch64": 0,
+        "riscv64": 0
+      }
+    },
+    {
+      "object_id": "protocol_version_table:alloca:alloca-0",
+      "benchmark": "protocol_version_table",
+      "category": "packet_header",
+      "kind": "alloca",
+      "original_bits": 16,
+      "w_min": 5,
+      "method_c_bits": 8,
+      "allocation_equivalent_widths": 4,
+      "cross_target_class": "target-specific-regression",
+      "target_outcomes": {
+        "x86_64": "regressed",
+        "aarch64": "neutral",
+        "riscv64": "neutral"
+      },
+      "machine_instruction_deltas": {
+        "x86_64": 1,
+        "aarch64": 0,
+        "riscv64": 0
+      },
+      "text_byte_deltas": {
+        "x86_64": 1,
+        "aarch64": 0,
+        "riscv64": 0
+      }
+    },
+    {
+      "object_id": "quantized_filter:alloca:alloca-0",
+      "benchmark": "quantized_filter",
+      "category": "dsp_signal",
+      "kind": "alloca",
+      "original_bits": 16,
+      "w_min": 7,
+      "method_c_bits": 8,
+      "allocation_equivalent_widths": 2,
+      "cross_target_class": "neutral",
+      "target_outcomes": {
+        "x86_64": "neutral",
+        "aarch64": "neutral",
+        "riscv64": "neutral"
+      },
+      "machine_instruction_deltas": {
+        "x86_64": 0,
+        "aarch64": 0,
+        "riscv64": 0
+      },
+      "text_byte_deltas": {
+        "x86_64": 0,
+        "aarch64": 0,
+        "riscv64": 0
+      }
+    },
+    {
+      "object_id": "rgb565_unpack:alloca:alloca-0",
+      "benchmark": "rgb565_unpack",
+      "category": "image_pixel",
+      "kind": "alloca",
+      "original_bits": 16,
+      "w_min": 6,
+      "method_c_bits": 8,
+      "allocation_equivalent_widths": 3,
+      "cross_target_class": "neutral",
+      "target_outcomes": {
+        "x86_64": "neutral",
+        "aarch64": "neutral",
+        "riscv64": "neutral"
+      },
+      "machine_instruction_deltas": {
+        "x86_64": 0,
+        "aarch64": 0,
+        "riscv64": 0
+      },
+      "text_byte_deltas": {
+        "x86_64": 0,
+        "aarch64": 0,
+        "riscv64": 0
+      }
+    },
+    {
+      "object_id": "select_ranges:alloca:alloca-0",
+      "benchmark": "select_ranges",
+      "category": "unsigned_ranges",
+      "kind": "alloca",
+      "original_bits": 16,
+      "w_min": 6,
+      "method_c_bits": 8,
+      "allocation_equivalent_widths": 3,
+      "cross_target_class": "consistent-improvement",
+      "target_outcomes": {
+        "x86_64": "improved",
+        "aarch64": "improved",
+        "riscv64": "improved"
+      },
+      "machine_instruction_deltas": {
+        "x86_64": -5,
+        "aarch64": -4,
+        "riscv64": -6
+      },
+      "text_byte_deltas": {
+        "x86_64": -12,
+        "aarch64": -16,
+        "riscv64": -14
+      }
+    },
+    {
+      "object_id": "signed_delta_pair:alloca:alloca-0",
+      "benchmark": "signed_delta_pair",
+      "category": "signed_values",
+      "kind": "alloca",
+      "original_bits": 16,
+      "w_min": 8,
+      "method_c_bits": 8,
+      "allocation_equivalent_widths": 1,
+      "cross_target_class": "neutral",
+      "target_outcomes": {
+        "x86_64": "neutral",
+        "aarch64": "neutral",
+        "riscv64": "neutral"
+      },
+      "machine_instruction_deltas": {
+        "x86_64": 0,
+        "aarch64": 0,
+        "riscv64": 0
+      },
+      "text_byte_deltas": {
+        "x86_64": 0,
+        "aarch64": 0,
+        "riscv64": 0
+      }
+    },
+    {
+      "object_id": "signed_offsets:alloca:alloca-0",
+      "benchmark": "signed_offsets",
+      "category": "signed_values",
+      "kind": "alloca",
+      "original_bits": 16,
+      "w_min": 8,
+      "method_c_bits": 8,
+      "allocation_equivalent_widths": 1,
+      "cross_target_class": "neutral",
+      "target_outcomes": {
+        "x86_64": "neutral",
+        "aarch64": "neutral",
+        "riscv64": "neutral"
+      },
+      "machine_instruction_deltas": {
+        "x86_64": 0,
+        "aarch64": 0,
+        "riscv64": 0
+      },
+      "text_byte_deltas": {
+        "x86_64": 0,
+        "aarch64": 0,
+        "riscv64": 0
+      }
+    },
+    {
+      "object_id": "small_state_machine:alloca:alloca-0",
+      "benchmark": "small_state_machine",
+      "category": "embedded_state",
+      "kind": "alloca",
+      "original_bits": 16,
+      "w_min": 3,
+      "method_c_bits": 8,
+      "allocation_equivalent_widths": 6,
+      "cross_target_class": "neutral",
+      "target_outcomes": {
+        "x86_64": "neutral",
+        "aarch64": "neutral",
+        "riscv64": "neutral"
+      },
+      "machine_instruction_deltas": {
+        "x86_64": 0,
+        "aarch64": 0,
+        "riscv64": 0
+      },
+      "text_byte_deltas": {
+        "x86_64": 0,
+        "aarch64": 0,
+        "riscv64": 0
+      }
+    },
+    {
+      "object_id": "status_flags:alloca:alloca-0",
+      "benchmark": "status_flags",
+      "category": "embedded_state",
+      "kind": "alloca",
+      "original_bits": 16,
+      "w_min": 3,
+      "method_c_bits": 8,
+      "allocation_equivalent_widths": 6,
+      "cross_target_class": "neutral",
+      "target_outcomes": {
+        "x86_64": "neutral",
+        "aarch64": "neutral",
+        "riscv64": "neutral"
+      },
+      "machine_instruction_deltas": {
+        "x86_64": 0,
+        "aarch64": 0,
+        "riscv64": 0
+      },
+      "text_byte_deltas": {
+        "x86_64": 0,
+        "aarch64": 0,
+        "riscv64": 0
+      }
+    },
+    {
+      "object_id": "tcp_flag_decode:alloca:alloca-0",
+      "benchmark": "tcp_flag_decode",
+      "category": "packet_header",
+      "kind": "alloca",
+      "original_bits": 16,
+      "w_min": 1,
+      "method_c_bits": 8,
+      "allocation_equivalent_widths": 8,
+      "cross_target_class": "neutral",
+      "target_outcomes": {
+        "x86_64": "neutral",
+        "aarch64": "neutral",
+        "riscv64": "neutral"
+      },
+      "machine_instruction_deltas": {
+        "x86_64": 0,
+        "aarch64": 0,
+        "riscv64": 0
+      },
+      "text_byte_deltas": {
+        "x86_64": 0,
+        "aarch64": 0,
+        "riscv64": 0
+      }
+    },
+    {
+      "object_id": "unsigned_histogram:alloca:alloca-0",
+      "benchmark": "unsigned_histogram",
+      "category": "unsigned_ranges",
+      "kind": "alloca",
+      "original_bits": 16,
+      "w_min": 7,
+      "method_c_bits": 8,
+      "allocation_equivalent_widths": 2,
+      "cross_target_class": "target-specific-regression",
+      "target_outcomes": {
+        "x86_64": "regressed",
+        "aarch64": "regressed",
+        "riscv64": "neutral"
+      },
+      "machine_instruction_deltas": {
+        "x86_64": 6,
+        "aarch64": 3,
+        "riscv64": 0
+      },
+      "text_byte_deltas": {
+        "x86_64": 29,
+        "aarch64": 12,
+        "riscv64": 0
+      }
+    }
+  ]
+}

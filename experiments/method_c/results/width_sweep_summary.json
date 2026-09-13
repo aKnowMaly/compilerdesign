@@ -1,0 +1,1082 @@
+{
+  "objects": 23,
+  "candidate_widths_per_target": 91,
+  "candidate_width_evaluations": 273,
+  "target_summary": {
+    "x86_64": {
+      "candidate_widths": 91,
+      "nonbaseline_alternatives": 68,
+      "alternative_outcomes": {
+        "neutral": 62,
+        "regressed": 4,
+        "improved": 2
+      },
+      "objects_preferring_nonminimum_width": 1,
+      "preferred_total_machine_instruction_delta": -5,
+      "preferred_total_text_byte_delta": -12,
+      "tti_prediction": {
+        "true_positive": 1,
+        "false_positive": 14,
+        "true_negative": 52,
+        "false_negative": 1,
+        "precision": 0.06666666666666667,
+        "recall": 0.5
+      },
+      "o2_assignment_prediction": {
+        "true_positive": 2,
+        "false_positive": 0,
+        "true_negative": 66,
+        "false_negative": 0,
+        "precision": 1.0,
+        "recall": 1.0
+      },
+      "tti_machine_delta_pearson": -0.005453644025780863,
+      "o2_assignment_machine_delta_pearson": 0.758628495875079
+    },
+    "aarch64": {
+      "candidate_widths": 91,
+      "nonbaseline_alternatives": 68,
+      "alternative_outcomes": {
+        "neutral": 65,
+        "improved": 2,
+        "regressed": 1
+      },
+      "objects_preferring_nonminimum_width": 1,
+      "preferred_total_machine_instruction_delta": -4,
+      "preferred_total_text_byte_delta": -16,
+      "tti_prediction": {
+        "true_positive": 1,
+        "false_positive": 14,
+        "true_negative": 52,
+        "false_negative": 1,
+        "precision": 0.06666666666666667,
+        "recall": 0.5
+      },
+      "o2_assignment_prediction": {
+        "true_positive": 2,
+        "false_positive": 0,
+        "true_negative": 66,
+        "false_negative": 0,
+        "precision": 1.0,
+        "recall": 1.0
+      },
+      "tti_machine_delta_pearson": 0.04279904020128932,
+      "o2_assignment_machine_delta_pearson": 0.8842271566706267
+    },
+    "riscv64": {
+      "candidate_widths": 91,
+      "nonbaseline_alternatives": 68,
+      "alternative_outcomes": {
+        "neutral": 66,
+        "improved": 2
+      },
+      "objects_preferring_nonminimum_width": 1,
+      "preferred_total_machine_instruction_delta": -6,
+      "preferred_total_text_byte_delta": -14,
+      "tti_prediction": {
+        "true_positive": 1,
+        "false_positive": 14,
+        "true_negative": 52,
+        "false_negative": 1,
+        "precision": 0.06666666666666667,
+        "recall": 0.5
+      },
+      "o2_assignment_prediction": {
+        "true_positive": 2,
+        "false_positive": 0,
+        "true_negative": 66,
+        "false_negative": 0,
+        "precision": 1.0,
+        "recall": 1.0
+      },
+      "tti_machine_delta_pearson": 0.07832447597530313,
+      "o2_assignment_machine_delta_pearson": 0.9846267757304448
+    }
+  },
+  "preferences": [
+    {
+      "target": "aarch64",
+      "object_id": "alpha_blend_weights:alloca:alloca-0",
+      "benchmark": "alpha_blend_weights",
+      "category": "image_pixel",
+      "w_min": 8,
+      "preferred_bits": 8,
+      "preferred_differs": 0,
+      "machine_instruction_delta": 0,
+      "text_byte_delta": 0
+    },
+    {
+      "target": "aarch64",
+      "object_id": "checksum_nibbles:alloca:alloca-0",
+      "benchmark": "checksum_nibbles",
+      "category": "packet_header",
+      "w_min": 4,
+      "preferred_bits": 4,
+      "preferred_differs": 0,
+      "machine_instruction_delta": 0,
+      "text_byte_delta": 0
+    },
+    {
+      "target": "aarch64",
+      "object_id": "embedded_counters:alloca:alloca-0",
+      "benchmark": "embedded_counters",
+      "category": "embedded_state",
+      "w_min": 5,
+      "preferred_bits": 5,
+      "preferred_differs": 0,
+      "machine_instruction_delta": 0,
+      "text_byte_delta": 0
+    },
+    {
+      "target": "aarch64",
+      "object_id": "fir4_coefficients:alloca:alloca-0",
+      "benchmark": "fir4_coefficients",
+      "category": "dsp_signal",
+      "w_min": 3,
+      "preferred_bits": 3,
+      "preferred_differs": 0,
+      "machine_instruction_delta": 0,
+      "text_byte_delta": 0
+    },
+    {
+      "target": "aarch64",
+      "object_id": "global_constants:global:lut_a",
+      "benchmark": "global_constants",
+      "category": "lookup_global",
+      "w_min": 3,
+      "preferred_bits": 3,
+      "preferred_differs": 0,
+      "machine_instruction_delta": 0,
+      "text_byte_delta": 0
+    },
+    {
+      "target": "aarch64",
+      "object_id": "global_constants:global:lut_b",
+      "benchmark": "global_constants",
+      "category": "lookup_global",
+      "w_min": 4,
+      "preferred_bits": 4,
+      "preferred_differs": 0,
+      "machine_instruction_delta": 0,
+      "text_byte_delta": 0
+    },
+    {
+      "target": "aarch64",
+      "object_id": "global_flag_table:global:flags_a",
+      "benchmark": "global_flag_table",
+      "category": "lookup_global",
+      "w_min": 1,
+      "preferred_bits": 1,
+      "preferred_differs": 0,
+      "machine_instruction_delta": 0,
+      "text_byte_delta": 0
+    },
+    {
+      "target": "aarch64",
+      "object_id": "global_flag_table:global:flags_b",
+      "benchmark": "global_flag_table",
+      "category": "lookup_global",
+      "w_min": 2,
+      "preferred_bits": 2,
+      "preferred_differs": 0,
+      "machine_instruction_delta": 0,
+      "text_byte_delta": 0
+    },
+    {
+      "target": "aarch64",
+      "object_id": "global_flag_table:global:flags_c",
+      "benchmark": "global_flag_table",
+      "category": "lookup_global",
+      "w_min": 3,
+      "preferred_bits": 3,
+      "preferred_differs": 0,
+      "machine_instruction_delta": 0,
+      "text_byte_delta": 0
+    },
+    {
+      "target": "aarch64",
+      "object_id": "grayscale_threshold:alloca:alloca-0",
+      "benchmark": "grayscale_threshold",
+      "category": "image_pixel",
+      "w_min": 8,
+      "preferred_bits": 8,
+      "preferred_differs": 0,
+      "machine_instruction_delta": 0,
+      "text_byte_delta": 0
+    },
+    {
+      "target": "aarch64",
+      "object_id": "ipv4_header_fields:alloca:alloca-0",
+      "benchmark": "ipv4_header_fields",
+      "category": "packet_header",
+      "w_min": 8,
+      "preferred_bits": 8,
+      "preferred_differs": 0,
+      "machine_instruction_delta": 0,
+      "text_byte_delta": 0
+    },
+    {
+      "target": "aarch64",
+      "object_id": "packet_flags:alloca:alloca-0",
+      "benchmark": "packet_flags",
+      "category": "packet_header",
+      "w_min": 5,
+      "preferred_bits": 5,
+      "preferred_differs": 0,
+      "machine_instruction_delta": 0,
+      "text_byte_delta": 0
+    },
+    {
+      "target": "aarch64",
+      "object_id": "pixel_channels:alloca:alloca-0",
+      "benchmark": "pixel_channels",
+      "category": "image_pixel",
+      "w_min": 8,
+      "preferred_bits": 8,
+      "preferred_differs": 0,
+      "machine_instruction_delta": 0,
+      "text_byte_delta": 0
+    },
+    {
+      "target": "aarch64",
+      "object_id": "protocol_version_table:alloca:alloca-0",
+      "benchmark": "protocol_version_table",
+      "category": "packet_header",
+      "w_min": 5,
+      "preferred_bits": 5,
+      "preferred_differs": 0,
+      "machine_instruction_delta": 0,
+      "text_byte_delta": 0
+    },
+    {
+      "target": "aarch64",
+      "object_id": "quantized_filter:alloca:alloca-0",
+      "benchmark": "quantized_filter",
+      "category": "dsp_signal",
+      "w_min": 7,
+      "preferred_bits": 7,
+      "preferred_differs": 0,
+      "machine_instruction_delta": 0,
+      "text_byte_delta": 0
+    },
+    {
+      "target": "aarch64",
+      "object_id": "rgb565_unpack:alloca:alloca-0",
+      "benchmark": "rgb565_unpack",
+      "category": "image_pixel",
+      "w_min": 6,
+      "preferred_bits": 6,
+      "preferred_differs": 0,
+      "machine_instruction_delta": 0,
+      "text_byte_delta": 0
+    },
+    {
+      "target": "aarch64",
+      "object_id": "select_ranges:alloca:alloca-0",
+      "benchmark": "select_ranges",
+      "category": "unsigned_ranges",
+      "w_min": 6,
+      "preferred_bits": 7,
+      "preferred_differs": 1,
+      "machine_instruction_delta": -4,
+      "text_byte_delta": -16
+    },
+    {
+      "target": "aarch64",
+      "object_id": "signed_delta_pair:alloca:alloca-0",
+      "benchmark": "signed_delta_pair",
+      "category": "signed_values",
+      "w_min": 8,
+      "preferred_bits": 8,
+      "preferred_differs": 0,
+      "machine_instruction_delta": 0,
+      "text_byte_delta": 0
+    },
+    {
+      "target": "aarch64",
+      "object_id": "signed_offsets:alloca:alloca-0",
+      "benchmark": "signed_offsets",
+      "category": "signed_values",
+      "w_min": 8,
+      "preferred_bits": 8,
+      "preferred_differs": 0,
+      "machine_instruction_delta": 0,
+      "text_byte_delta": 0
+    },
+    {
+      "target": "aarch64",
+      "object_id": "small_state_machine:alloca:alloca-0",
+      "benchmark": "small_state_machine",
+      "category": "embedded_state",
+      "w_min": 3,
+      "preferred_bits": 3,
+      "preferred_differs": 0,
+      "machine_instruction_delta": 0,
+      "text_byte_delta": 0
+    },
+    {
+      "target": "aarch64",
+      "object_id": "status_flags:alloca:alloca-0",
+      "benchmark": "status_flags",
+      "category": "embedded_state",
+      "w_min": 3,
+      "preferred_bits": 3,
+      "preferred_differs": 0,
+      "machine_instruction_delta": 0,
+      "text_byte_delta": 0
+    },
+    {
+      "target": "aarch64",
+      "object_id": "tcp_flag_decode:alloca:alloca-0",
+      "benchmark": "tcp_flag_decode",
+      "category": "packet_header",
+      "w_min": 1,
+      "preferred_bits": 1,
+      "preferred_differs": 0,
+      "machine_instruction_delta": 0,
+      "text_byte_delta": 0
+    },
+    {
+      "target": "aarch64",
+      "object_id": "unsigned_histogram:alloca:alloca-0",
+      "benchmark": "unsigned_histogram",
+      "category": "unsigned_ranges",
+      "w_min": 7,
+      "preferred_bits": 7,
+      "preferred_differs": 0,
+      "machine_instruction_delta": 0,
+      "text_byte_delta": 0
+    },
+    {
+      "target": "riscv64",
+      "object_id": "alpha_blend_weights:alloca:alloca-0",
+      "benchmark": "alpha_blend_weights",
+      "category": "image_pixel",
+      "w_min": 8,
+      "preferred_bits": 8,
+      "preferred_differs": 0,
+      "machine_instruction_delta": 0,
+      "text_byte_delta": 0
+    },
+    {
+      "target": "riscv64",
+      "object_id": "checksum_nibbles:alloca:alloca-0",
+      "benchmark": "checksum_nibbles",
+      "category": "packet_header",
+      "w_min": 4,
+      "preferred_bits": 4,
+      "preferred_differs": 0,
+      "machine_instruction_delta": 0,
+      "text_byte_delta": 0
+    },
+    {
+      "target": "riscv64",
+      "object_id": "embedded_counters:alloca:alloca-0",
+      "benchmark": "embedded_counters",
+      "category": "embedded_state",
+      "w_min": 5,
+      "preferred_bits": 5,
+      "preferred_differs": 0,
+      "machine_instruction_delta": 0,
+      "text_byte_delta": 0
+    },
+    {
+      "target": "riscv64",
+      "object_id": "fir4_coefficients:alloca:alloca-0",
+      "benchmark": "fir4_coefficients",
+      "category": "dsp_signal",
+      "w_min": 3,
+      "preferred_bits": 3,
+      "preferred_differs": 0,
+      "machine_instruction_delta": 0,
+      "text_byte_delta": 0
+    },
+    {
+      "target": "riscv64",
+      "object_id": "global_constants:global:lut_a",
+      "benchmark": "global_constants",
+      "category": "lookup_global",
+      "w_min": 3,
+      "preferred_bits": 3,
+      "preferred_differs": 0,
+      "machine_instruction_delta": 0,
+      "text_byte_delta": 0
+    },
+    {
+      "target": "riscv64",
+      "object_id": "global_constants:global:lut_b",
+      "benchmark": "global_constants",
+      "category": "lookup_global",
+      "w_min": 4,
+      "preferred_bits": 4,
+      "preferred_differs": 0,
+      "machine_instruction_delta": 0,
+      "text_byte_delta": 0
+    },
+    {
+      "target": "riscv64",
+      "object_id": "global_flag_table:global:flags_a",
+      "benchmark": "global_flag_table",
+      "category": "lookup_global",
+      "w_min": 1,
+      "preferred_bits": 1,
+      "preferred_differs": 0,
+      "machine_instruction_delta": 0,
+      "text_byte_delta": 0
+    },
+    {
+      "target": "riscv64",
+      "object_id": "global_flag_table:global:flags_b",
+      "benchmark": "global_flag_table",
+      "category": "lookup_global",
+      "w_min": 2,
+      "preferred_bits": 2,
+      "preferred_differs": 0,
+      "machine_instruction_delta": 0,
+      "text_byte_delta": 0
+    },
+    {
+      "target": "riscv64",
+      "object_id": "global_flag_table:global:flags_c",
+      "benchmark": "global_flag_table",
+      "category": "lookup_global",
+      "w_min": 3,
+      "preferred_bits": 3,
+      "preferred_differs": 0,
+      "machine_instruction_delta": 0,
+      "text_byte_delta": 0
+    },
+    {
+      "target": "riscv64",
+      "object_id": "grayscale_threshold:alloca:alloca-0",
+      "benchmark": "grayscale_threshold",
+      "category": "image_pixel",
+      "w_min": 8,
+      "preferred_bits": 8,
+      "preferred_differs": 0,
+      "machine_instruction_delta": 0,
+      "text_byte_delta": 0
+    },
+    {
+      "target": "riscv64",
+      "object_id": "ipv4_header_fields:alloca:alloca-0",
+      "benchmark": "ipv4_header_fields",
+      "category": "packet_header",
+      "w_min": 8,
+      "preferred_bits": 8,
+      "preferred_differs": 0,
+      "machine_instruction_delta": 0,
+      "text_byte_delta": 0
+    },
+    {
+      "target": "riscv64",
+      "object_id": "packet_flags:alloca:alloca-0",
+      "benchmark": "packet_flags",
+      "category": "packet_header",
+      "w_min": 5,
+      "preferred_bits": 5,
+      "preferred_differs": 0,
+      "machine_instruction_delta": 0,
+      "text_byte_delta": 0
+    },
+    {
+      "target": "riscv64",
+      "object_id": "pixel_channels:alloca:alloca-0",
+      "benchmark": "pixel_channels",
+      "category": "image_pixel",
+      "w_min": 8,
+      "preferred_bits": 8,
+      "preferred_differs": 0,
+      "machine_instruction_delta": 0,
+      "text_byte_delta": 0
+    },
+    {
+      "target": "riscv64",
+      "object_id": "protocol_version_table:alloca:alloca-0",
+      "benchmark": "protocol_version_table",
+      "category": "packet_header",
+      "w_min": 5,
+      "preferred_bits": 5,
+      "preferred_differs": 0,
+      "machine_instruction_delta": 0,
+      "text_byte_delta": 0
+    },
+    {
+      "target": "riscv64",
+      "object_id": "quantized_filter:alloca:alloca-0",
+      "benchmark": "quantized_filter",
+      "category": "dsp_signal",
+      "w_min": 7,
+      "preferred_bits": 7,
+      "preferred_differs": 0,
+      "machine_instruction_delta": 0,
+      "text_byte_delta": 0
+    },
+    {
+      "target": "riscv64",
+      "object_id": "rgb565_unpack:alloca:alloca-0",
+      "benchmark": "rgb565_unpack",
+      "category": "image_pixel",
+      "w_min": 6,
+      "preferred_bits": 6,
+      "preferred_differs": 0,
+      "machine_instruction_delta": 0,
+      "text_byte_delta": 0
+    },
+    {
+      "target": "riscv64",
+      "object_id": "select_ranges:alloca:alloca-0",
+      "benchmark": "select_ranges",
+      "category": "unsigned_ranges",
+      "w_min": 6,
+      "preferred_bits": 7,
+      "preferred_differs": 1,
+      "machine_instruction_delta": -6,
+      "text_byte_delta": -14
+    },
+    {
+      "target": "riscv64",
+      "object_id": "signed_delta_pair:alloca:alloca-0",
+      "benchmark": "signed_delta_pair",
+      "category": "signed_values",
+      "w_min": 8,
+      "preferred_bits": 8,
+      "preferred_differs": 0,
+      "machine_instruction_delta": 0,
+      "text_byte_delta": 0
+    },
+    {
+      "target": "riscv64",
+      "object_id": "signed_offsets:alloca:alloca-0",
+      "benchmark": "signed_offsets",
+      "category": "signed_values",
+      "w_min": 8,
+      "preferred_bits": 8,
+      "preferred_differs": 0,
+      "machine_instruction_delta": 0,
+      "text_byte_delta": 0
+    },
+    {
+      "target": "riscv64",
+      "object_id": "small_state_machine:alloca:alloca-0",
+      "benchmark": "small_state_machine",
+      "category": "embedded_state",
+      "w_min": 3,
+      "preferred_bits": 3,
+      "preferred_differs": 0,
+      "machine_instruction_delta": 0,
+      "text_byte_delta": 0
+    },
+    {
+      "target": "riscv64",
+      "object_id": "status_flags:alloca:alloca-0",
+      "benchmark": "status_flags",
+      "category": "embedded_state",
+      "w_min": 3,
+      "preferred_bits": 3,
+      "preferred_differs": 0,
+      "machine_instruction_delta": 0,
+      "text_byte_delta": 0
+    },
+    {
+      "target": "riscv64",
+      "object_id": "tcp_flag_decode:alloca:alloca-0",
+      "benchmark": "tcp_flag_decode",
+      "category": "packet_header",
+      "w_min": 1,
+      "preferred_bits": 1,
+      "preferred_differs": 0,
+      "machine_instruction_delta": 0,
+      "text_byte_delta": 0
+    },
+    {
+      "target": "riscv64",
+      "object_id": "unsigned_histogram:alloca:alloca-0",
+      "benchmark": "unsigned_histogram",
+      "category": "unsigned_ranges",
+      "w_min": 7,
+      "preferred_bits": 7,
+      "preferred_differs": 0,
+      "machine_instruction_delta": 0,
+      "text_byte_delta": 0
+    },
+    {
+      "target": "x86_64",
+      "object_id": "alpha_blend_weights:alloca:alloca-0",
+      "benchmark": "alpha_blend_weights",
+      "category": "image_pixel",
+      "w_min": 8,
+      "preferred_bits": 8,
+      "preferred_differs": 0,
+      "machine_instruction_delta": 0,
+      "text_byte_delta": 0
+    },
+    {
+      "target": "x86_64",
+      "object_id": "checksum_nibbles:alloca:alloca-0",
+      "benchmark": "checksum_nibbles",
+      "category": "packet_header",
+      "w_min": 4,
+      "preferred_bits": 4,
+      "preferred_differs": 0,
+      "machine_instruction_delta": 0,
+      "text_byte_delta": 0
+    },
+    {
+      "target": "x86_64",
+      "object_id": "embedded_counters:alloca:alloca-0",
+      "benchmark": "embedded_counters",
+      "category": "embedded_state",
+      "w_min": 5,
+      "preferred_bits": 5,
+      "preferred_differs": 0,
+      "machine_instruction_delta": 0,
+      "text_byte_delta": 0
+    },
+    {
+      "target": "x86_64",
+      "object_id": "fir4_coefficients:alloca:alloca-0",
+      "benchmark": "fir4_coefficients",
+      "category": "dsp_signal",
+      "w_min": 3,
+      "preferred_bits": 3,
+      "preferred_differs": 0,
+      "machine_instruction_delta": 0,
+      "text_byte_delta": 0
+    },
+    {
+      "target": "x86_64",
+      "object_id": "global_constants:global:lut_a",
+      "benchmark": "global_constants",
+      "category": "lookup_global",
+      "w_min": 3,
+      "preferred_bits": 3,
+      "preferred_differs": 0,
+      "machine_instruction_delta": 0,
+      "text_byte_delta": 0
+    },
+    {
+      "target": "x86_64",
+      "object_id": "global_constants:global:lut_b",
+      "benchmark": "global_constants",
+      "category": "lookup_global",
+      "w_min": 4,
+      "preferred_bits": 4,
+      "preferred_differs": 0,
+      "machine_instruction_delta": 0,
+      "text_byte_delta": 0
+    },
+    {
+      "target": "x86_64",
+      "object_id": "global_flag_table:global:flags_a",
+      "benchmark": "global_flag_table",
+      "category": "lookup_global",
+      "w_min": 1,
+      "preferred_bits": 1,
+      "preferred_differs": 0,
+      "machine_instruction_delta": 0,
+      "text_byte_delta": 0
+    },
+    {
+      "target": "x86_64",
+      "object_id": "global_flag_table:global:flags_b",
+      "benchmark": "global_flag_table",
+      "category": "lookup_global",
+      "w_min": 2,
+      "preferred_bits": 2,
+      "preferred_differs": 0,
+      "machine_instruction_delta": 0,
+      "text_byte_delta": 0
+    },
+    {
+      "target": "x86_64",
+      "object_id": "global_flag_table:global:flags_c",
+      "benchmark": "global_flag_table",
+      "category": "lookup_global",
+      "w_min": 3,
+      "preferred_bits": 3,
+      "preferred_differs": 0,
+      "machine_instruction_delta": 0,
+      "text_byte_delta": 0
+    },
+    {
+      "target": "x86_64",
+      "object_id": "grayscale_threshold:alloca:alloca-0",
+      "benchmark": "grayscale_threshold",
+      "category": "image_pixel",
+      "w_min": 8,
+      "preferred_bits": 8,
+      "preferred_differs": 0,
+      "machine_instruction_delta": 0,
+      "text_byte_delta": 0
+    },
+    {
+      "target": "x86_64",
+      "object_id": "ipv4_header_fields:alloca:alloca-0",
+      "benchmark": "ipv4_header_fields",
+      "category": "packet_header",
+      "w_min": 8,
+      "preferred_bits": 8,
+      "preferred_differs": 0,
+      "machine_instruction_delta": 0,
+      "text_byte_delta": 0
+    },
+    {
+      "target": "x86_64",
+      "object_id": "packet_flags:alloca:alloca-0",
+      "benchmark": "packet_flags",
+      "category": "packet_header",
+      "w_min": 5,
+      "preferred_bits": 5,
+      "preferred_differs": 0,
+      "machine_instruction_delta": 0,
+      "text_byte_delta": 0
+    },
+    {
+      "target": "x86_64",
+      "object_id": "pixel_channels:alloca:alloca-0",
+      "benchmark": "pixel_channels",
+      "category": "image_pixel",
+      "w_min": 8,
+      "preferred_bits": 8,
+      "preferred_differs": 0,
+      "machine_instruction_delta": 0,
+      "text_byte_delta": 0
+    },
+    {
+      "target": "x86_64",
+      "object_id": "protocol_version_table:alloca:alloca-0",
+      "benchmark": "protocol_version_table",
+      "category": "packet_header",
+      "w_min": 5,
+      "preferred_bits": 5,
+      "preferred_differs": 0,
+      "machine_instruction_delta": 0,
+      "text_byte_delta": 0
+    },
+    {
+      "target": "x86_64",
+      "object_id": "quantized_filter:alloca:alloca-0",
+      "benchmark": "quantized_filter",
+      "category": "dsp_signal",
+      "w_min": 7,
+      "preferred_bits": 7,
+      "preferred_differs": 0,
+      "machine_instruction_delta": 0,
+      "text_byte_delta": 0
+    },
+    {
+      "target": "x86_64",
+      "object_id": "rgb565_unpack:alloca:alloca-0",
+      "benchmark": "rgb565_unpack",
+      "category": "image_pixel",
+      "w_min": 6,
+      "preferred_bits": 6,
+      "preferred_differs": 0,
+      "machine_instruction_delta": 0,
+      "text_byte_delta": 0
+    },
+    {
+      "target": "x86_64",
+      "object_id": "select_ranges:alloca:alloca-0",
+      "benchmark": "select_ranges",
+      "category": "unsigned_ranges",
+      "w_min": 6,
+      "preferred_bits": 7,
+      "preferred_differs": 1,
+      "machine_instruction_delta": -5,
+      "text_byte_delta": -12
+    },
+    {
+      "target": "x86_64",
+      "object_id": "signed_delta_pair:alloca:alloca-0",
+      "benchmark": "signed_delta_pair",
+      "category": "signed_values",
+      "w_min": 8,
+      "preferred_bits": 8,
+      "preferred_differs": 0,
+      "machine_instruction_delta": 0,
+      "text_byte_delta": 0
+    },
+    {
+      "target": "x86_64",
+      "object_id": "signed_offsets:alloca:alloca-0",
+      "benchmark": "signed_offsets",
+      "category": "signed_values",
+      "w_min": 8,
+      "preferred_bits": 8,
+      "preferred_differs": 0,
+      "machine_instruction_delta": 0,
+      "text_byte_delta": 0
+    },
+    {
+      "target": "x86_64",
+      "object_id": "small_state_machine:alloca:alloca-0",
+      "benchmark": "small_state_machine",
+      "category": "embedded_state",
+      "w_min": 3,
+      "preferred_bits": 3,
+      "preferred_differs": 0,
+      "machine_instruction_delta": 0,
+      "text_byte_delta": 0
+    },
+    {
+      "target": "x86_64",
+      "object_id": "status_flags:alloca:alloca-0",
+      "benchmark": "status_flags",
+      "category": "embedded_state",
+      "w_min": 3,
+      "preferred_bits": 3,
+      "preferred_differs": 0,
+      "machine_instruction_delta": 0,
+      "text_byte_delta": 0
+    },
+    {
+      "target": "x86_64",
+      "object_id": "tcp_flag_decode:alloca:alloca-0",
+      "benchmark": "tcp_flag_decode",
+      "category": "packet_header",
+      "w_min": 1,
+      "preferred_bits": 1,
+      "preferred_differs": 0,
+      "machine_instruction_delta": 0,
+      "text_byte_delta": 0
+    },
+    {
+      "target": "x86_64",
+      "object_id": "unsigned_histogram:alloca:alloca-0",
+      "benchmark": "unsigned_histogram",
+      "category": "unsigned_ranges",
+      "w_min": 7,
+      "preferred_bits": 7,
+      "preferred_differs": 0,
+      "machine_instruction_delta": 0,
+      "text_byte_delta": 0
+    }
+  ],
+  "cross_target_preferred_widths": {
+    "alpha_blend_weights:alloca:alloca-0": {
+      "aarch64": 8,
+      "riscv64": 8,
+      "x86_64": 8
+    },
+    "checksum_nibbles:alloca:alloca-0": {
+      "aarch64": 4,
+      "riscv64": 4,
+      "x86_64": 4
+    },
+    "embedded_counters:alloca:alloca-0": {
+      "aarch64": 5,
+      "riscv64": 5,
+      "x86_64": 5
+    },
+    "fir4_coefficients:alloca:alloca-0": {
+      "aarch64": 3,
+      "riscv64": 3,
+      "x86_64": 3
+    },
+    "global_constants:global:lut_a": {
+      "aarch64": 3,
+      "riscv64": 3,
+      "x86_64": 3
+    },
+    "global_constants:global:lut_b": {
+      "aarch64": 4,
+      "riscv64": 4,
+      "x86_64": 4
+    },
+    "global_flag_table:global:flags_a": {
+      "aarch64": 1,
+      "riscv64": 1,
+      "x86_64": 1
+    },
+    "global_flag_table:global:flags_b": {
+      "aarch64": 2,
+      "riscv64": 2,
+      "x86_64": 2
+    },
+    "global_flag_table:global:flags_c": {
+      "aarch64": 3,
+      "riscv64": 3,
+      "x86_64": 3
+    },
+    "grayscale_threshold:alloca:alloca-0": {
+      "aarch64": 8,
+      "riscv64": 8,
+      "x86_64": 8
+    },
+    "ipv4_header_fields:alloca:alloca-0": {
+      "aarch64": 8,
+      "riscv64": 8,
+      "x86_64": 8
+    },
+    "packet_flags:alloca:alloca-0": {
+      "aarch64": 5,
+      "riscv64": 5,
+      "x86_64": 5
+    },
+    "pixel_channels:alloca:alloca-0": {
+      "aarch64": 8,
+      "riscv64": 8,
+      "x86_64": 8
+    },
+    "protocol_version_table:alloca:alloca-0": {
+      "aarch64": 5,
+      "riscv64": 5,
+      "x86_64": 5
+    },
+    "quantized_filter:alloca:alloca-0": {
+      "aarch64": 7,
+      "riscv64": 7,
+      "x86_64": 7
+    },
+    "rgb565_unpack:alloca:alloca-0": {
+      "aarch64": 6,
+      "riscv64": 6,
+      "x86_64": 6
+    },
+    "select_ranges:alloca:alloca-0": {
+      "aarch64": 7,
+      "riscv64": 7,
+      "x86_64": 7
+    },
+    "signed_delta_pair:alloca:alloca-0": {
+      "aarch64": 8,
+      "riscv64": 8,
+      "x86_64": 8
+    },
+    "signed_offsets:alloca:alloca-0": {
+      "aarch64": 8,
+      "riscv64": 8,
+      "x86_64": 8
+    },
+    "small_state_machine:alloca:alloca-0": {
+      "aarch64": 3,
+      "riscv64": 3,
+      "x86_64": 3
+    },
+    "status_flags:alloca:alloca-0": {
+      "aarch64": 3,
+      "riscv64": 3,
+      "x86_64": 3
+    },
+    "tcp_flag_decode:alloca:alloca-0": {
+      "aarch64": 1,
+      "riscv64": 1,
+      "x86_64": 1
+    },
+    "unsigned_histogram:alloca:alloca-0": {
+      "aarch64": 7,
+      "riscv64": 7,
+      "x86_64": 7
+    }
+  },
+  "improved_alternatives": [
+    {
+      "target": "x86_64",
+      "object_id": "select_ranges:alloca:alloca-0",
+      "candidate_bits": 7,
+      "machine_instruction_delta": -5,
+      "text_byte_delta": -12,
+      "o2_assignment_delta": -4,
+      "tti_delta": 0
+    },
+    {
+      "target": "x86_64",
+      "object_id": "select_ranges:alloca:alloca-0",
+      "candidate_bits": 8,
+      "machine_instruction_delta": -5,
+      "text_byte_delta": -12,
+      "o2_assignment_delta": -4,
+      "tti_delta": -2
+    },
+    {
+      "target": "aarch64",
+      "object_id": "select_ranges:alloca:alloca-0",
+      "candidate_bits": 7,
+      "machine_instruction_delta": -4,
+      "text_byte_delta": -16,
+      "o2_assignment_delta": -4,
+      "tti_delta": 0
+    },
+    {
+      "target": "aarch64",
+      "object_id": "select_ranges:alloca:alloca-0",
+      "candidate_bits": 8,
+      "machine_instruction_delta": -4,
+      "text_byte_delta": -16,
+      "o2_assignment_delta": -4,
+      "tti_delta": -2
+    },
+    {
+      "target": "riscv64",
+      "object_id": "select_ranges:alloca:alloca-0",
+      "candidate_bits": 7,
+      "machine_instruction_delta": -6,
+      "text_byte_delta": -14,
+      "o2_assignment_delta": -4,
+      "tti_delta": 0
+    },
+    {
+      "target": "riscv64",
+      "object_id": "select_ranges:alloca:alloca-0",
+      "candidate_bits": 8,
+      "machine_instruction_delta": -6,
+      "text_byte_delta": -14,
+      "o2_assignment_delta": -4,
+      "tti_delta": -2
+    }
+  ],
+  "regressed_alternatives": [
+    {
+      "target": "x86_64",
+      "object_id": "protocol_version_table:alloca:alloca-0",
+      "candidate_bits": 6,
+      "machine_instruction_delta": 1,
+      "text_byte_delta": 1,
+      "o2_assignment_delta": 0,
+      "tti_delta": 0,
+      "vector_ir_line_delta": 0
+    },
+    {
+      "target": "x86_64",
+      "object_id": "protocol_version_table:alloca:alloca-0",
+      "candidate_bits": 7,
+      "machine_instruction_delta": 1,
+      "text_byte_delta": 1,
+      "o2_assignment_delta": 0,
+      "tti_delta": 0,
+      "vector_ir_line_delta": 0
+    },
+    {
+      "target": "x86_64",
+      "object_id": "protocol_version_table:alloca:alloca-0",
+      "candidate_bits": 8,
+      "machine_instruction_delta": 1,
+      "text_byte_delta": 1,
+      "o2_assignment_delta": 0,
+      "tti_delta": -5,
+      "vector_ir_line_delta": 0
+    },
+    {
+      "target": "x86_64",
+      "object_id": "unsigned_histogram:alloca:alloca-0",
+      "candidate_bits": 8,
+      "machine_instruction_delta": 6,
+      "text_byte_delta": 29,
+      "o2_assignment_delta": 0,
+      "tti_delta": -1,
+      "vector_ir_line_delta": 7
+    },
+    {
+      "target": "aarch64",
+      "object_id": "unsigned_histogram:alloca:alloca-0",
+      "candidate_bits": 8,
+      "machine_instruction_delta": 3,
+      "text_byte_delta": 12,
+      "o2_assignment_delta": 0,
+      "tti_delta": -1,
+      "vector_ir_line_delta": 7
+    }
+  ]
+}

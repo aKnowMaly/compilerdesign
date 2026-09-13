@@ -44,7 +44,21 @@ Run from the repository root under WSL:
 ```bash
 bash experiments/method_c/run_smoke.sh
 python3 experiments/method_c/run_method_c.py
+python3 experiments/method_c/run_posthoc.py
+python3 experiments/method_c/run_width_sweep.py
+python3 experiments/method_c/run_runtime.py
+python3 experiments/method_c/run_width_runtime.py
 ```
 
 Outputs are written below `build/method-c/`.
 
+The tracked post-hoc evidence is in `experiments/method_c/results/`:
+
+- `posthoc_objects.tsv` and `posthoc_summary.json`: isolated 23-object results;
+- `width_sweep.tsv` and `width_sweep_summary.json`: all 91 safe widths per target;
+- `width_sweep_runtime.tsv` and `width_sweep_runtime_summary.json`: host
+  differential results for all swept widths.
+
+The complete interpretation and command chronology are in
+`posthoc_report.md` and `research_log.md`. The object/width command-line controls
+are hidden, experimental, and affect only `adaptive-width-mem-method-c`.

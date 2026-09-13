@@ -12,6 +12,7 @@
 #include "llvm/IR/PassManager.h"
 #include "llvm/Passes/PassBuilder.h"
 #include "llvm/Passes/PassPlugin.h"
+#include "llvm/Support/CommandLine.h"
 #include "llvm/Support/KnownBits.h"
 #include "llvm/Support/raw_ostream.h"
 
@@ -22,6 +23,16 @@
 using namespace llvm;
 
 namespace {
+
+static cl::opt<int> MethodCObjectOrdinal(
+    "adaptive-width-method-c-object", cl::Hidden, cl::init(-1),
+    cl::desc("Apply Method C's allocation-equivalent width choice only to "
+             "this zero-based safely narrowable object ordinal"));
+
+static cl::opt<int> MethodCForcedBits(
+    "adaptive-width-method-c-bits", cl::Hidden, cl::init(-1),
+    cl::desc("Force one safe minimum-allocation width for the isolated Method "
+             "C object (experimental analysis only)"));
 
 struct SafetySummary {
   unsigned SupportedUses = 0;
@@ -152,6 +163,7 @@ private:
   PassConfig Config;
   RunStats Stats;
   const DataLayout *DL = nullptr;
+  unsigned MethodCCandidateOrdinal = 0;
 
   bool processGlobalCandidate(GlobalVariable &GV) {
     if (!GV.hasLocalLinkage())
@@ -448,6 +460,16 @@ private:
     if (!Config.SelectAllocationEquivalentMaxWidth)
       return Choice;
 
+    unsigned CandidateOrdinal = MethodCCandidateOrdinal++;
+    if (MethodCObjectOrdinal >= 0 &&
+        CandidateOrdinal != static_cast<unsigned>(MethodCObjectOrdinal)) {
+      errs() << "[adaptive-width-mem] method-c isolated-skip ordinal="
+             << CandidateOrdinal << " candidate=";
+      printValueName(errs(), Root);
+      errs() << " selected-bits=" << Choice.SelectedBits << "\n";
+      return Choice;
+    }
+
     uint64_t BestAllocBytes = std::numeric_limits<uint64_t>::max();
     for (unsigned Bits = Width.ProposedBits; Bits < Width.OriginalBits; ++Bits) {
       IntegerType *CandidateElementTy =
@@ -472,6 +494,20 @@ private:
 
     if (BestAllocBytes != std::numeric_limits<uint64_t>::max())
       Choice.MinAllocBytes = BestAllocBytes;
+
+    if (MethodCForcedBits >= 0) {
+      unsigned ForcedBits = static_cast<unsigned>(MethodCForcedBits);
+      if (ForcedBits >= Width.ProposedBits &&
+          ForcedBits < Width.OriginalBits) {
+        IntegerType *ForcedElementTy =
+            IntegerType::get(Root.getContext(), ForcedBits);
+        Type *ForcedTy = replaceIntegerElementType(OriginalTy, ForcedElementTy);
+        uint64_t ForcedAllocBytes =
+            DL->getTypeAllocSize(ForcedTy).getFixedValue();
+        if (ForcedAllocBytes == Choice.MinAllocBytes)
+          Choice.SelectedBits = ForcedBits;
+      }
+    }
 
     errs() << "[adaptive-width-mem] method-c candidate=";
     printValueName(errs(), Root);
