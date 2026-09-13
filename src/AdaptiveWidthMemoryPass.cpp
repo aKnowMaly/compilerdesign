@@ -16,6 +16,7 @@
 #include "llvm/Support/raw_ostream.h"
 
 #include <algorithm>
+#include <limits>
 #include <string>
 
 using namespace llvm;
@@ -62,6 +63,7 @@ struct PassConfig {
   bool ProcessGlobals = true;
   bool ProcessAllocas = true;
   bool RequireTargetAllocationBenefit = false;
+  bool SelectAllocationEquivalentMaxWidth = false;
   StringRef ModeName = "adaptive-width-mem";
 };
 
@@ -204,6 +206,15 @@ private:
     WidthSummary Width;
   };
 
+  struct WidthChoice {
+    unsigned SelectedBits = 0;
+    unsigned SafeWidths = 0;
+    unsigned AllocationPositiveWidths = 0;
+    unsigned MinAllocationEquivalentWidths = 0;
+    uint64_t BaselineAllocBytes = 0;
+    uint64_t MinAllocBytes = 0;
+  };
+
   CandidateSummary logSafetyAndWidth(Value &Root, Type *StoredTy) {
     CandidateSummary Candidate;
     SafetySummary Summary;
@@ -313,8 +324,9 @@ private:
     if (!OldElementTy)
       return false;
 
+    WidthChoice Choice = chooseExperimentalWidth(AI, AllocatedTy, Width);
     IntegerType *NewElementTy =
-        IntegerType::get(AI.getContext(), Width.ProposedBits);
+        IntegerType::get(AI.getContext(), Choice.SelectedBits);
     if (!canRewritePointerUsers(AI, *OldElementTy, *NewElementTy)) {
       ++Stats.RewriteBlockedCandidates;
       return false;
@@ -341,7 +353,7 @@ private:
 
     errs() << "[adaptive-width-mem] transform alloca name=" << NewAI->getName()
            << " original-bits=" << Width.OriginalBits
-           << " narrowed-bits=" << Width.ProposedBits << " original-type=\"";
+           << " narrowed-bits=" << Choice.SelectedBits << " original-type=\"";
     AllocatedTy->print(errs());
     errs() << "\" transformed-type=\"";
     NewAllocatedTy->print(errs());
@@ -353,7 +365,7 @@ private:
            << " transformed-abi-align="
            << DL->getABITypeAlign(NewAllocatedTy).value() << "\n";
     ++Stats.TransformedAllocas;
-    Stats.BitsSavedPerElement += Width.OriginalBits - Width.ProposedBits;
+    Stats.BitsSavedPerElement += Width.OriginalBits - Choice.SelectedBits;
     return true;
   }
 
@@ -371,8 +383,9 @@ private:
     if (!OldElementTy)
       return false;
 
+    WidthChoice Choice = chooseExperimentalWidth(GV, ValueTy, Width);
     IntegerType *NewElementTy =
-        IntegerType::get(GV.getContext(), Width.ProposedBits);
+        IntegerType::get(GV.getContext(), Choice.SelectedBits);
     if (!canRewritePointerUsers(GV, *OldElementTy, *NewElementTy)) {
       ++Stats.RewriteBlockedCandidates;
       return false;
@@ -407,7 +420,7 @@ private:
 
     errs() << "[adaptive-width-mem] transform global name=" << NewGV->getName()
            << " original-bits=" << Width.OriginalBits
-           << " narrowed-bits=" << Width.ProposedBits << " original-type=\"";
+           << " narrowed-bits=" << Choice.SelectedBits << " original-type=\"";
     ValueTy->print(errs());
     errs() << "\" transformed-type=\"";
     NewValueTy->print(errs());
@@ -419,8 +432,59 @@ private:
            << " transformed-abi-align=" << DL->getABITypeAlign(NewValueTy).value()
            << "\n";
     ++Stats.TransformedGlobals;
-    Stats.BitsSavedPerElement += Width.OriginalBits - Width.ProposedBits;
+    Stats.BitsSavedPerElement += Width.OriginalBits - Choice.SelectedBits;
     return true;
+  }
+
+  WidthChoice chooseExperimentalWidth(Value &Root, Type *OriginalTy,
+                                      const WidthSummary &Width) {
+    WidthChoice Choice;
+    Choice.SelectedBits = Width.ProposedBits;
+    Choice.SafeWidths = Width.OriginalBits - Width.ProposedBits;
+    Choice.BaselineAllocBytes =
+        DL->getTypeAllocSize(OriginalTy).getFixedValue();
+    Choice.MinAllocBytes = Choice.BaselineAllocBytes;
+
+    if (!Config.SelectAllocationEquivalentMaxWidth)
+      return Choice;
+
+    uint64_t BestAllocBytes = std::numeric_limits<uint64_t>::max();
+    for (unsigned Bits = Width.ProposedBits; Bits < Width.OriginalBits; ++Bits) {
+      IntegerType *CandidateElementTy =
+          IntegerType::get(Root.getContext(), Bits);
+      Type *CandidateTy =
+          replaceIntegerElementType(OriginalTy, CandidateElementTy);
+      uint64_t CandidateAllocBytes =
+          DL->getTypeAllocSize(CandidateTy).getFixedValue();
+      if (CandidateAllocBytes >= Choice.BaselineAllocBytes)
+        continue;
+
+      ++Choice.AllocationPositiveWidths;
+      if (CandidateAllocBytes < BestAllocBytes) {
+        BestAllocBytes = CandidateAllocBytes;
+        Choice.SelectedBits = Bits;
+        Choice.MinAllocationEquivalentWidths = 1;
+      } else if (CandidateAllocBytes == BestAllocBytes) {
+        Choice.SelectedBits = Bits;
+        ++Choice.MinAllocationEquivalentWidths;
+      }
+    }
+
+    if (BestAllocBytes != std::numeric_limits<uint64_t>::max())
+      Choice.MinAllocBytes = BestAllocBytes;
+
+    errs() << "[adaptive-width-mem] method-c candidate=";
+    printValueName(errs(), Root);
+    errs() << " w-min=" << Width.ProposedBits
+           << " selected-bits=" << Choice.SelectedBits
+           << " safe-widths=" << Choice.SafeWidths
+           << " allocation-positive-widths="
+           << Choice.AllocationPositiveWidths
+           << " min-allocation-equivalent-widths="
+           << Choice.MinAllocationEquivalentWidths
+           << " baseline-alloc-bytes=" << Choice.BaselineAllocBytes
+           << " min-alloc-bytes=" << Choice.MinAllocBytes << "\n";
+    return Choice;
   }
 
   void noteWidthSkip(const WidthSummary &Width) {
@@ -963,6 +1027,10 @@ extern "C" LLVM_ATTRIBUTE_WEAK PassPluginLibraryInfo llvmGetPassPluginInfo() {
                   } else if (Name == "adaptive-width-mem-target-aware") {
                     Config.RequireTargetAllocationBenefit = true;
                     Config.ModeName = "adaptive-width-mem-target-aware";
+                  } else if (Name == "adaptive-width-mem-method-c") {
+                    Config.RequireTargetAllocationBenefit = true;
+                    Config.SelectAllocationEquivalentMaxWidth = true;
+                    Config.ModeName = "adaptive-width-mem-method-c";
                   } else {
                     return false;
                   }
