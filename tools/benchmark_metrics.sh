@@ -5,7 +5,8 @@ ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 PLUGIN="$ROOT_DIR/build/AdaptiveWidthMemoryPass.so"
 LLVM_DIR="${LLVM_DIR:-/usr/lib/llvm-18/lib/cmake/llvm}"
 BENCH_DIR="${1:-$ROOT_DIR/benchmarks}"
-OUT_DIR="$ROOT_DIR/build/benchmark-metrics"
+OUT_DIR="${BENCHMARK_OUT_DIR:-$ROOT_DIR/build/benchmark-metrics}"
+PASS_PIPELINE="${PASS_PIPELINE:-adaptive-width-mem}"
 REPORT="$OUT_DIR/benchmark-metrics.tsv"
 SUMMARY="$OUT_DIR/summary.md"
 MANIFEST="$BENCH_DIR/manifest.tsv"
@@ -22,7 +23,7 @@ fi
 cmake --build "$ROOT_DIR/build" >/dev/null
 mkdir -p "$OUT_DIR/ir" "$OUT_DIR/logs" "$OUT_DIR/transformed-ir" "$OUT_DIR/optimized-ir"
 
-printf 'benchmark\tcategory\tcandidate_globals\tcandidate_allocas\tsafe\tblocked\tunknown_width\tnot_profitable\trewrite_blocked\ttransformed_globals\ttransformed_allocas\tloads_rewritten\tstores_rewritten\tbits_saved_per_element\tbaseline_ir_instructions\ttransformed_ir_instructions\tir_instruction_delta\toptimized_baseline_ir_instructions\toptimized_transformed_ir_instructions\toptimized_ir_instruction_delta\tpass_wall_ms\n' > "$REPORT"
+printf 'benchmark\tcategory\tcandidate_globals\tcandidate_allocas\tsafe\tblocked\tunknown_width\tno_meaningful_reduction\trewrite_blocked\ttransformed_globals\ttransformed_allocas\tloads_rewritten\tstores_rewritten\tbits_saved_per_element\tbaseline_ir_instructions\ttransformed_ir_instructions\tir_instruction_delta\toptimized_baseline_ir_instructions\toptimized_transformed_ir_instructions\toptimized_ir_instruction_delta\tpass_wall_ms\n' > "$REPORT"
 
 get_category() {
   local benchmark="$1"
@@ -62,7 +63,7 @@ run_benchmark() {
 
   local start_ns end_ns pass_wall_ms
   start_ns="$(date +%s%N)"
-  opt-18 -load-pass-plugin="$PLUGIN" -passes=adaptive-width-mem \
+  opt-18 -load-pass-plugin="$PLUGIN" -passes="$PASS_PIPELINE" \
     -verify-each -S "$input_ir" -o "$output_ir" 2> "$log"
   end_ns="$(date +%s%N)"
   pass_wall_ms="$(( (end_ns - start_ns) / 1000000 ))"
@@ -90,7 +91,7 @@ run_benchmark() {
     "$(get_field "$summary" safe)" \
     "$(get_field "$summary" blocked)" \
     "$(get_field "$summary" unknown-width)" \
-    "$(get_field "$summary" not-profitable)" \
+    "$(get_field "$summary" no-meaningful-reduction)" \
     "$(get_field "$summary" rewrite-blocked)" \
     "$(get_field "$summary" transformed-globals)" \
     "$(get_field "$summary" transformed-allocas)" \
@@ -130,7 +131,7 @@ NR == 1 { next }
   safe += $5
   blocked += $6
   unknown_width += $7
-  not_profitable += $8
+  no_meaningful_reduction += $8
   rewrite_blocked += $9
   transformed_globals += $10
   transformed_allocas += $11
@@ -166,7 +167,7 @@ END {
   printf "| safe candidates | %d |\n", safe
   printf "| blocked candidates | %d |\n", blocked
   printf "| unknown-width candidates | %d |\n", unknown_width
-  printf "| not-profitable candidates | %d |\n", not_profitable
+  printf "| candidates with no meaningful width reduction | %d |\n", no_meaningful_reduction
   printf "| rewrite-blocked candidates | %d |\n", rewrite_blocked
   printf "| transformed globals | %d |\n", transformed_globals
   printf "| transformed allocas | %d |\n", transformed_allocas
@@ -192,7 +193,7 @@ END {
   print ""
   print "## Per-benchmark metrics"
   print ""
-  print "| benchmark | category | candidate globals | candidate allocas | safe | blocked | unknown width | not profitable | rewrite blocked | transformed globals | transformed allocas | loads rewritten | stores rewritten | bits saved per element | baseline IR inst | transformed IR inst | IR inst delta | optimized IR delta | pass wall ms |"
+  print "| benchmark | category | candidate globals | candidate allocas | safe | blocked | unknown width | no meaningful reduction | rewrite blocked | transformed globals | transformed allocas | loads rewritten | stores rewritten | bits saved per element | baseline IR inst | transformed IR inst | IR inst delta | optimized IR delta | pass wall ms |"
   print "|---|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|"
 }
 ' "$REPORT" > "$SUMMARY"

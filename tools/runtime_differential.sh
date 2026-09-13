@@ -5,7 +5,8 @@ ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 PLUGIN="$ROOT_DIR/build/AdaptiveWidthMemoryPass.so"
 LLVM_DIR="${LLVM_DIR:-/usr/lib/llvm-18/lib/cmake/llvm}"
 BENCH_DIR="${1:-$ROOT_DIR/benchmarks}"
-OUT_DIR="$ROOT_DIR/build/runtime-differential"
+OUT_DIR="${RUNTIME_OUT_DIR:-$ROOT_DIR/build/runtime-differential}"
+PASS_PIPELINE="${PASS_PIPELINE:-adaptive-width-mem}"
 REPORT="$OUT_DIR/runtime-differential.tsv"
 SUMMARY="$OUT_DIR/summary.md"
 
@@ -21,7 +22,7 @@ fi
 cmake --build "$ROOT_DIR/build" >/dev/null
 mkdir -p "$OUT_DIR/src" "$OUT_DIR/ir" "$OUT_DIR/bin" "$OUT_DIR/logs"
 
-printf 'benchmark\tstatus\tbaseline_output\ttransformed_output\n' > "$REPORT"
+printf 'benchmark\tstatus\tbaseline_output\ttransformed_output\tbaseline_binary_bytes\ttransformed_binary_bytes\tbinary_size_delta_bytes\n' > "$REPORT"
 
 emit_harness() {
   local name="$1"
@@ -161,7 +162,7 @@ run_one() {
   emit_harness "$name" "$source"
   clang-18 -O0 -S -emit-llvm -Xclang -disable-O0-optnone "$combined" -o "$raw_ir"
   opt-18 -passes=mem2reg -S "$raw_ir" -o "$input_ir"
-  opt-18 -load-pass-plugin="$PLUGIN" -passes=adaptive-width-mem \
+  opt-18 -load-pass-plugin="$PLUGIN" -passes="$PASS_PIPELINE" \
     -verify-each -S "$input_ir" -o "$transformed_ir" 2> "$log"
   opt-18 -passes=verify -disable-output "$transformed_ir"
 
@@ -177,7 +178,13 @@ run_one() {
     status="FAIL"
   fi
 
-  printf '%s\t%s\t%s\t%s\n' "$name" "$status" "$baseline_output" "$transformed_output" >> "$REPORT"
+  local baseline_bytes transformed_bytes
+  baseline_bytes="$(stat -c %s "$baseline_bin")"
+  transformed_bytes="$(stat -c %s "$transformed_bin")"
+  printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\n' \
+    "$name" "$status" "$baseline_output" "$transformed_output" \
+    "$baseline_bytes" "$transformed_bytes" \
+    "$(( transformed_bytes - baseline_bytes ))" >> "$REPORT"
   [[ "$status" == "PASS" ]]
 }
 
@@ -200,7 +207,10 @@ NR == 1 { next }
     passed += 1
   else
     failed += 1
-  rows = rows sprintf("| %s | %s | `%s` | `%s` |\n", $1, $2, $3, $4)
+  baseline_bytes += $5
+  transformed_bytes += $6
+  binary_delta += $7
+  rows = rows sprintf("| %s | %s | `%s` | `%s` | %d | %d | %+d |\n", $1, $2, $3, $4, $5, $6, $7)
 }
 END {
   print "# Runtime Differential Test Summary"
@@ -210,12 +220,17 @@ END {
   printf "| benchmark executables | %d |\n", total
   printf "| passed | %d |\n", passed
   printf "| failed | %d |\n", failed
+  printf "| summed baseline binary bytes | %d |\n", baseline_bytes
+  printf "| summed transformed binary bytes | %d |\n", transformed_bytes
+  printf "| summed binary-size delta | %+d bytes |\n", binary_delta
   print ""
   print "## Per-benchmark outputs"
   print ""
-  print "| benchmark | status | baseline output | transformed output |"
-  print "|---|---|---:|---:|"
+  print "| benchmark | status | baseline output | transformed output | baseline bytes | transformed bytes | delta bytes |"
+  print "|---|---|---:|---:|---:|---:|---:|"
   printf "%s", rows
+  print ""
+  print "Binary sizes are host- and toolchain-specific executable file sizes. They are reported as generated-artifact evidence, not as runtime-memory or performance measurements."
 }
 ' "$REPORT" > "$SUMMARY"
 

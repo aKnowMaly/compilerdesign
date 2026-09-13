@@ -1,7 +1,7 @@
 ; RUN: opt-18 -load-pass-plugin=%plugin -passes=adaptive-width-mem -verify-each -S %s | FileCheck-18 %s
 ; RUN: opt-18 -load-pass-plugin=%plugin -passes=adaptive-width-mem -verify-each -disable-output %s 2>&1 | FileCheck-18 %s --check-prefix=LOG
 
-; LOG: [adaptive-width-mem] summary candidate-globals=4 candidate-allocas=6 safe=8 blocked=2 unknown-width=2 not-profitable=1 rewrite-blocked=0 transformed-globals=2 transformed-allocas=3 loads-rewritten=2 stores-rewritten=3 bits-saved-per-element=67
+; LOG: [adaptive-width-mem] summary candidate-globals=4 candidate-allocas=6 safe=8 blocked=2 unknown-width=2 no-meaningful-reduction=1 rewrite-blocked=0 transformed-globals=2 transformed-allocas=3 loads-rewritten=2 stores-rewritten=3 bits-saved-per-element=67
 
 @internal_arr = internal global [4 x i32] zeroinitializer
 @private_byte = private global i8 0

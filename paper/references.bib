@@ -2,34 +2,148 @@
   author = {Lattner, Chris and Adve, Vikram},
   title = {{LLVM}: A Compilation Framework for Lifelong Program Analysis and Transformation},
   booktitle = {Proceedings of the International Symposium on Code Generation and Optimization},
-  year = {2004}
+  pages = {75--86},
+  year = {2004},
+  doi = {10.1109/CGO.2004.1281665}
 }
 
-@inproceedings{wegman1991sccp,
-  author = {Wegman, Mark N. and Zadeck, F. Kenneth},
-  title = {Constant Propagation with Conditional Branches},
-  booktitle = {ACM Transactions on Programming Languages and Systems},
-  year = {1991}
-}
-
-@article{cousot1977abstract,
+@inproceedings{cousot1977abstract,
   author = {Cousot, Patrick and Cousot, Radhia},
   title = {Abstract Interpretation: A Unified Lattice Model for Static Analysis of Programs by Construction or Approximation of Fixpoints},
-  journal = {Proceedings of the ACM SIGPLAN-SIGACT Symposium on Principles of Programming Languages},
-  year = {1977}
+  booktitle = {Proceedings of the ACM SIGPLAN-SIGACT Symposium on Principles of Programming Languages},
+  pages = {238--252},
+  year = {1977},
+  doi = {10.1145/512950.512973}
+}
+
+@article{wegman1991sccp,
+  author = {Wegman, Mark N. and Zadeck, F. Kenneth},
+  title = {Constant Propagation with Conditional Branches},
+  journal = {ACM Transactions on Programming Languages and Systems},
+  volume = {13},
+  number = {2},
+  pages = {181--210},
+  year = {1991},
+  doi = {10.1145/103135.103136}
+}
+
+@inproceedings{stephenson2000bitwidth,
+  author = {Stephenson, Mark and Babb, Jonathan and Amarasinghe, Saman P.},
+  title = {Bitwidth Analysis with Application to Silicon Compilation},
+  booktitle = {Proceedings of the ACM SIGPLAN Conference on Programming Language Design and Implementation},
+  pages = {108--120},
+  year = {2000},
+  doi = {10.1145/349299.349317}
+}
+
+@inproceedings{budiu2000bitvalue,
+  author = {Budiu, Mihai and Sakr, Majd and Walker, Kevin and Goldstein, Seth Copen},
+  title = {BitValue Inference: Detecting and Exploiting Narrow Bitwidth Computations},
+  booktitle = {Euro-Par 2000 Parallel Processing},
+  series = {Lecture Notes in Computer Science},
+  volume = {1900},
+  pages = {969--979},
+  publisher = {Springer},
+  year = {2000},
+  doi = {10.1007/3-540-44520-X_136}
+}
+
+@inproceedings{lee2005minibit,
+  author = {Lee, Dong-U and Gaffar, Altaf Abdul and Mencer, Oskar and Luk, Wayne},
+  title = {MiniBit: Bit-Width Optimization via Affine Arithmetic},
+  booktitle = {Proceedings of the 42nd Design Automation Conference},
+  pages = {837--840},
+  year = {2005},
+  doi = {10.1145/1065579.1065799}
+}
+
+@article{heo2025bitlevel,
+  author = {Heo, Seonyeong and Kim, Jiho and Im, Woohyeop and Moon, Jiyun and Jang, Daehee},
+  title = {Bit-Level Compiler Optimization for Ultra Low-Power Embedded Systems},
+  journal = {Journal of Systems Architecture},
+  volume = {168},
+  pages = {103546},
+  year = {2025},
+  doi = {10.1016/j.sysarc.2025.103546}
+}
+
+@inproceedings{lopes2021alive2,
+  author = {Lopes, Nuno P. and Lee, Juneyoung and Hur, Chung-Kil and Liu, Zhengyang and Regehr, John},
+  title = {Alive2: Bounded Translation Validation for {LLVM}},
+  booktitle = {Proceedings of the 42nd ACM SIGPLAN International Conference on Programming Language Design and Implementation},
+  pages = {65--79},
+  year = {2021},
+  doi = {10.1145/3453483.3454030}
 }
 
 @misc{llvmLangRef,
   author = {{LLVM Project}},
   title = {{LLVM Language Reference Manual}},
   year = {2026},
-  note = {Accessed as implementation documentation for LLVM IR semantics}
+  howpublished = {\url{https://llvm.org/docs/LangRef.html}},
+  note = {Accessed 2026-09-13}
 }
 
 @misc{llvmKnownBits,
   author = {{LLVM Project}},
-  title = {{LLVM KnownBits and ValueTracking infrastructure}},
+  title = {{KnownBits and ValueTracking Infrastructure}},
   year = {2026},
-  note = {Used through LLVM's ValueTracking analysis interface}
+  howpublished = {\url{https://llvm.org/doxygen/classllvm_1_1KnownBits.html}},
+  note = {Accessed 2026-09-13}
 }
 
+@misc{llvmDemandedBits,
+  author = {{LLVM Project}},
+  title = {{DemandedBits Class Reference}},
+  year = {2026},
+  howpublished = {\url{https://llvm.org/doxygen/classllvm_1_1DemandedBits.html}},
+  note = {Accessed 2026-09-13}
+}
+
+@misc{llvmConstantRange,
+  author = {{LLVM Project}},
+  title = {{ConstantRange Class Reference}},
+  year = {2026},
+  howpublished = {\url{https://llvm.org/doxygen/classllvm_1_1ConstantRange.html}},
+  note = {Accessed 2026-09-13}
+}
+
+@misc{llvmScalarEvolution,
+  author = {{LLVM Project}},
+  title = {{ScalarEvolution Class Reference}},
+  year = {2026},
+  howpublished = {\url{https://llvm.org/doxygen/classllvm_1_1ScalarEvolution.html}},
+  note = {Accessed 2026-09-13}
+}
+
+@misc{llvmNewPM,
+  author = {{LLVM Project}},
+  title = {Writing an {LLVM} Pass with the New Pass Manager},
+  year = {2026},
+  howpublished = {\url{https://llvm.org/docs/WritingAnLLVMNewPMPass.html}},
+  note = {Accessed 2026-09-13}
+}
+
+@misc{llvmSROA,
+  author = {{LLVM Project}},
+  title = {Scalar Replacement of Aggregates and Memory Promotion},
+  year = {2026},
+  howpublished = {\url{https://llvm.org/docs/Passes.html}},
+  note = {Accessed 2026-09-13}
+}
+
+@inproceedings{guthaus2001mibench,
+  author = {Guthaus, Matthew R. and Ringenberg, Jeffrey S. and Ernst, Dan and Austin, Todd M. and Mudge, Trevor and Brown, Richard B.},
+  title = {{MiBench}: A Free, Commercially Representative Embedded Benchmark Suite},
+  booktitle = {Proceedings of the Fourth Annual IEEE International Workshop on Workload Characterization},
+  pages = {3--14},
+  year = {2001}
+}
+
+@misc{llvmTestSuite,
+  author = {{LLVM Project}},
+  title = {{LLVM Test Suite}},
+  year = {2026},
+  howpublished = {\url{https://github.com/llvm/llvm-test-suite}},
+  note = {MiBench source pinned at commit 4b2c892865cbbb05ee996c88794a58e17d3adb81; accessed 2026-09-13}
+}

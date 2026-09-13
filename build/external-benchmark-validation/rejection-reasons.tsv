@@ -1,0 +1,10 @@
+method	reason	count
+A	no-meaningful-width-reduction	21
+A	pointer-stored-as-value	4
+A	unknown-stored-value	192
+A	unsupported-user	4744
+B	no-meaningful-width-reduction	21
+B	no-target-allocation-benefit	2
+B	pointer-stored-as-value	4
+B	unknown-stored-value	192
+B	unsupported-user	4744

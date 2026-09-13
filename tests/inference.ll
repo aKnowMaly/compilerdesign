@@ -1,7 +1,7 @@
 ; RUN: opt-18 -load-pass-plugin=%plugin -passes=adaptive-width-mem -verify-each -S %s | FileCheck-18 %s
 ; RUN: opt-18 -load-pass-plugin=%plugin -passes=adaptive-width-mem -verify-each -disable-output %s 2>&1 | FileCheck-18 %s --check-prefix=LOG
 
-; LOG: [adaptive-width-mem] summary candidate-globals=0 candidate-allocas=6 safe=6 blocked=0 unknown-width=0 not-profitable=0 rewrite-blocked=0 transformed-globals=0 transformed-allocas=6 loads-rewritten=5 stores-rewritten=6 bits-saved-per-element=59
+; LOG: [adaptive-width-mem] summary candidate-globals=0 candidate-allocas=6 safe=6 blocked=0 unknown-width=0 no-meaningful-reduction=0 rewrite-blocked=0 transformed-globals=0 transformed-allocas=6 loads-rewritten=5 stores-rewritten=6 bits-saved-per-element=59
 
 define i16 @or_select_phi(i32 %x, i1 %cond) {
 ; CHECK-LABEL: define i16 @or_select_phi

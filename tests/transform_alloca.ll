@@ -1,7 +1,7 @@
 ; RUN: opt-18 -load-pass-plugin=%plugin -passes=adaptive-width-mem -verify-each -S %s | FileCheck-18 %s
 ; RUN: opt-18 -load-pass-plugin=%plugin -passes=adaptive-width-mem -verify-each -disable-output %s 2>&1 | FileCheck-18 %s --check-prefix=LOG
 
-; LOG: [adaptive-width-mem] summary candidate-globals=0 candidate-allocas=7 safe=7 blocked=0 unknown-width=2 not-profitable=0 rewrite-blocked=0 transformed-globals=0 transformed-allocas=5 loads-rewritten=2 stores-rewritten=5 bits-saved-per-element=50
+; LOG: [adaptive-width-mem] summary candidate-globals=0 candidate-allocas=7 safe=7 blocked=0 unknown-width=2 no-meaningful-reduction=0 rewrite-blocked=0 transformed-globals=0 transformed-allocas=5 loads-rewritten=2 stores-rewritten=5 bits-saved-per-element=50
 
 define void @narrow_no_load_stack_arrays(i32 %x) {
 ; CHECK-LABEL: define void @narrow_no_load_stack_arrays

@@ -1,27 +1,19 @@
-# Paper Draft Package
+# Paper source
 
-This directory contains the first paper draft for the AdaptiveWidthMemoryPass
-research artifact.
+`main.tex` is the authoritative manuscript. Numerical macros, result tables, and
+data-driven vector figures are generated from
+`build/final-evaluation/final-evaluation.json` and
+`build/target-allocation-comparison/comparison.json`. The separate external
+MiBench table and macros come from
+`build/external-benchmark-validation/results.json`. These inputs preserve the
+controlled A/B result, external validation, and distinct declared-width and
+DataLayout-derived allocation levels; do not hand-edit generated outputs.
 
-## Files
+After running the complete test suite, compile the paper from Windows PowerShell:
 
-- `main.tex` - LaTeX source for the paper draft.
-- `references.bib` - bibliography entries used by the draft.
-- `tables/` - checked-in tables generated from the current metrics snapshot.
-
-## Build
-
-If a TeX distribution is installed:
-
-```bash
-cd paper
-pdflatex main.tex
-bibtex main
-pdflatex main.tex
-pdflatex main.tex
+```powershell
+powershell -ExecutionPolicy Bypass -File tools/build_paper.ps1
 ```
 
-The draft intentionally avoids broad claims. Current evaluation numbers are from
-the repository's fixtures and small C kernels, not a large external benchmark
-suite.
-
+The build uses Tectonic to compile the genuine two-column LaTeX source and writes
+`output/pdf/adaptive-width-memory-narrowing-paper.pdf`.

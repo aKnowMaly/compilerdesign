@@ -1,0 +1,22 @@
+\begin{table*}[t]
+\centering
+\caption{Controlled A/B evaluation. Accepted-allocation percentages use each method's accepted objects; the common-set result is identical.}
+\label{tab:ab}
+\small
+\begin{tabular}{lrr}
+\toprule
+Metric & A: conservative & B: + allocation guard \\
+\midrule
+Candidates / safety-safe / safety-blocked & 39 / 35 / 4 & 39 / 35 / 4 \\
+Transformed objects & 26 & 23 \\
+Positive / zero / negative & 23 / 3 / 0 & 23 / 0 / 0 \\
+Declared-width reduction & 271 bits & 252 bits \\
+Accepted-object allocation & 150 $\rightarrow$ 83 B & 134 $\rightarrow$ 67 B \\
+Accepted-object saving & 67 B (44.67\%) & 67 B (50.00\%) \\
+Allocation-benefit precision & 88.46\% & 100.00\% \\
+Raw / O2 IR delta & +141 / +4 & +125 / +4 \\
+Executable-size delta & +0 B & +0 B \\
+Differential agreement & 32/32 & 32/32 \\
+\bottomrule
+\end{tabular}
+\end{table*}

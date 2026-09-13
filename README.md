@@ -1,315 +1,167 @@
-# Adaptive Bit-Width Memory Narrowing MVP
+# Target-Aware Conservative Width Narrowing of LLVM Memory Objects
 
-This repository contains a small LLVM New Pass Manager plugin for a research
-prototype: adaptive bit-width optimization for memory objects. The current pass
-is intentionally conservative. It narrows only integer memory objects whose uses
-and stored values are simple enough to prove locally.
+This repository contains the frozen LLVM 18 MVP, its tests, a category-aware
+32-kernel evaluation suite, deterministic differential testing, an authoritative
+evidence snapshot, a controlled target-allocation A/B experiment, and the
+LaTeX research paper.
+
+The pass narrows selected local integer arrays and internal/private integer
+globals only when its supported analysis proves the narrower representation and
+load reconstruction. Unsupported pointer users, mixed extension families,
+unknown stored values, volatile/atomic memory operations, and other uncertain
+cases are left unchanged. An isolated experimental pipeline adds a strict
+DataLayout complete-object allocation guard after the unchanged safety analysis.
+The project does not claim a general target cost model, runtime speedup, or
+universal physical-memory reduction. It reports declared IR-width changes
+separately from target-specific DataLayout-derived allocation-size changes.
 
 ## Environment
 
-The pass is built and tested in Ubuntu WSL with LLVM 18:
+- Windows host with WSL Ubuntu
+- LLVM/Clang 18 (`clang-18`, `opt-18`, `FileCheck-18`)
+- CMake and Ninja
+- Python 3; ReportLab is used only for vector result figures
+- Tectonic 0.15.0 for LaTeX compilation
 
-- `clang-18`
-- `opt-18`
-- `llvm-config-18`
-- `FileCheck-18`
-- `cmake`
-- `ninja`
+## Build the pass
 
-The default LLVM CMake directory used by the test runner is:
-
-```bash
-/usr/lib/llvm-18/lib/cmake/llvm
-```
-
-## Build
+Run in WSL from the repository root:
 
 ```bash
 cmake -S . -B build -G Ninja -DLLVM_DIR=/usr/lib/llvm-18/lib/cmake/llvm
 cmake --build build
 ```
 
-The plugin is produced at:
+The plugin is `build/AdaptiveWidthMemoryPass.so`.
+
+## Invoke the pass
 
 ```bash
-build/AdaptiveWidthMemoryPass.so
+opt-18 -load-pass-plugin=build/AdaptiveWidthMemoryPass.so \
+  -passes=adaptive-width-mem -verify-each -S tests/transform_alloca.ll \
+  -o build/transform_alloca.out.ll
 ```
 
-## Run
+Available pipelines are `adaptive-width-mem`, `adaptive-width-mem-log`,
+`adaptive-width-mem-allocas`, `adaptive-width-mem-globals`, and
+`adaptive-width-mem-target-aware`. The last pipeline accepts a safe rewrite only
+when `DataLayout::getTypeAllocSize` strictly decreases for the complete object.
+
+## Complete validation and final evidence
+
+The complete runner builds the plugin, checks fixtures with LLVM verification
+and FileCheck, evaluates all benchmarks, compiles and compares baseline and
+transformed executables, writes binary-size evidence, regenerates tables, and
+creates the authoritative final summary:
 
 ```bash
-opt-18 \
-  -load-pass-plugin=build/AdaptiveWidthMemoryPass.so \
-  -passes=adaptive-width-mem \
-  -verify-each \
-  -S tests/transform_alloca.ll
+bash tests/run_tests.sh
 ```
 
-Available pipeline names:
-
-- `adaptive-width-mem`: analyze and transform supported globals and stack arrays.
-- `adaptive-width-mem-log`: analyze and report only; no IR mutation.
-- `adaptive-width-mem-allocas`: transform only supported stack arrays.
-- `adaptive-width-mem-globals`: transform only supported internal/private globals.
-
-## Test
-
-From WSL:
-
-```bash
-tests/run_tests.sh
-```
-
-The test runner builds the plugin, runs the smoke and transformation fixtures,
-verifies the transformed IR, and checks the expected output with `FileCheck-18`.
-
-## Demo Report
-
-To generate a compact tab-separated report from the bundled fixtures:
-
-```bash
-tools/demo_report.sh
-```
-
-The report is written to:
-
-```bash
-build/adaptive-width-report.tsv
-```
-
-Example columns:
-
-- candidates found;
-- safe vs blocked candidates;
-- unknown-width and not-profitable candidates;
-- transformed globals and allocas;
-- rewritten loads and stores;
-- summed bits saved per transformed element.
-
-Current bundled report:
-
-```text
-input                   transformed_globals  transformed_allocas  bits_saved_per_element
-candidates              2                    3                    67
-transform_alloca        0                    5                    50
-inference               0                    6                    59
-stack_positive          0                    1                    11
-globals.example         2                    0                    36
-masked_stack.example    0                    1                    11
-rejected_escape.example 0                    0                    0
-```
-
-The `examples/*.c` files are compiled to LLVM IR by `tools/demo_report.sh` using:
-
-```bash
-clang-18 -O0 -S -emit-llvm -Xclang -disable-O0-optnone
-```
-
-This keeps the examples close to source-level code while still leaving memory
-objects visible to the research pass.
-
-## Research Evaluation Artifact
-
-To regenerate the fuller evaluation bundle:
-
-```bash
-bash tools/research_evaluation.sh
-```
-
-This writes:
-
-```text
-build/research-evaluation/summary.md
-build/research-evaluation/adaptive-width-report.tsv
-build/research-evaluation/transformed-ir/
-build/research-evaluation/logs/
-```
-
-The summary includes aggregate candidate counts, transform/rejection rates, the
-per-input table, and reproducibility notes. The transformed IR snapshots and
-logs are kept with the summary so the artifact is inspectable without rerunning
-the pass.
-
-## Benchmark Metrics
-
-To run the initial benchmark-kernel metrics:
+Individual commands are:
 
 ```bash
 bash tools/benchmark_metrics.sh
-```
-
-This compiles every `benchmarks/*.c` file to LLVM IR, runs the pass, verifies the
-transformed IR, and writes:
-
-```text
-build/benchmark-metrics/summary.md
-build/benchmark-metrics/benchmark-metrics.tsv
-build/benchmark-metrics/ir/
-build/benchmark-metrics/transformed-ir/
-build/benchmark-metrics/logs/
-```
-
-The benchmark summary adds paper-facing metrics beyond the fixture report:
-
-- static candidate and transformation counts;
-- safe/blocked/unknown/not-profitable classification counts;
-- rewritten load/store counts;
-- static per-element bit-width savings;
-- LLVM IR instruction-count delta after transformation;
-- LLVM IR instruction-count delta after applying LLVM's default O2 pipeline to
-  baseline and transformed IR;
-- coarse pass wall-clock time for regression tracking.
-
-The included benchmark suite currently contains 32 deliberately small
-C-derived kernels. They exercise positive unsigned narrowing, signed narrowing,
-global constants, select-based ranges, packet/pixel-style bit extraction, and
-conservative rejection behavior before scaling the same harness to larger
-programs.
-
-## Runtime Differential Tests
-
-To compile and compare baseline vs transformed benchmark executables:
-
-```bash
 bash tools/runtime_differential.sh
+python3 tools/final_evaluation.py
+bash tools/target_allocation_experiment.sh
 ```
 
-This generates deterministic C harnesses for every `benchmarks/*.c` file,
-compiles baseline and transformed LLVM IR to native executables, runs both, and
-compares their checksum outputs. Results are written to:
+Primary generated evidence:
 
-```text
-build/runtime-differential/summary.md
-build/runtime-differential/runtime-differential.tsv
-build/runtime-differential/ir/
-build/runtime-differential/bin/
-build/runtime-differential/logs/
-```
+- `build/benchmark-metrics/benchmark-metrics.tsv`
+- `build/runtime-differential/runtime-differential.tsv`
+- `build/final-evaluation/final-evaluation.json` (authoritative paper numbers)
+- `build/final-evaluation/summary.md`
+- `build/final-evaluation/transformed-widths.tsv`
+- `build/final-evaluation/data-layout-allocations.tsv` (complete per-object evidence)
+- `build/final-evaluation/data-layout-by-kind.tsv`
+- `build/final-evaluation/data-layout-by-category.tsv`
+- `build/final-evaluation/claim-sources.tsv`
+- `build/final-test-status.tsv`
+- `build/target-allocation-comparison/comparison.json` (authoritative A/B result)
+- `build/target-allocation-comparison/methods.tsv`
+- `build/target-allocation-comparison/categories.tsv`
+- `build/target-allocation-comparison/rejection-reasons.tsv`
 
-The runtime differential tests complement LLVM verifier checks by confirming
-that the current transformed benchmark executables produce the same outputs as
-their baselines on deterministic generated inputs.
+The final evaluator fails if candidate partitions, runtime partitions,
+transformed-object counts, or summed width reductions disagree across sources.
+For every transformed object, the pass records the complete original and
+rewritten type plus `DataLayout::getTypeAllocSize` and ABI alignment. Arrays are
+measured using their complete array type. The results are specific to the
+module's x86-64 DataLayout and are not physical-memory measurements.
 
-## Paper Draft
+## External MiBench validation
 
-The first paper draft lives in:
+The additional external experiment evaluates the two frozen pipelines on the
+established MiBench integration in the
+[official LLVM test-suite](https://github.com/llvm/llvm-test-suite). It pins
+LLVM test-suite commit `4b2c892865cbbb05ee996c88794a58e17d3adb81`, uses the
+suite's unmodified C sources and packaged training commands, and keeps these
+results separate from the primary controlled 32-kernel experiment. The 17
+programs comprise 211 unmodified MiBench C compilation units. The generated
+`compile_commands.json` also contains `fpcmp.c` and `timeit.c`, two LLVM
+test-suite support tools; they are excluded from the MiBench unit count.
 
-```text
-paper/main.tex
-```
-
-The draft includes the method, safety model, implementation, limitations,
-related work framing, and evaluation tables generated from the current artifact
-metrics. To refresh the checked-in LaTeX tables after rerunning metrics:
+Additional WSL dependencies are Git and network access for the first source
+fetch. The normal LLVM 18, CMake, Ninja, Bash, and Python 3 dependencies listed
+above are also required. Run from the repository root:
 
 ```bash
-bash tools/update_paper_tables.sh
+bash tools/external_benchmark_experiment.sh
 ```
 
-If a TeX distribution is available, build from `paper/` with:
+The script obtains a sparse, line-ending-stable checkout under
+`build/external-suite`, builds all MiBench programs through the LLVM test-suite,
+recompiles each unmodified source program to whole-program LLVM IR, runs Method
+A and Method B, verifies raw and O2 IR, links executables, executes the official
+training command where possible, and validates the resulting schemas and
+partitions. Set `EXTERNAL_MIBENCH_SOURCE` only to reuse an existing checkout of
+the exact pinned commit. Set `JOBS` or `EXTERNAL_RUN_TIMEOUT` to control build
+parallelism or the per-executable timeout.
 
-```bash
-pdflatex main.tex
-bibtex main
-pdflatex main.tex
-pdflatex main.tex
-```
+Auditable outputs are written to:
 
-If LaTeX is unavailable, generate a polished PDF artifact with the bundled
-Python/reportlab workflow:
+- `build/external-benchmark-validation/results.json`
+- `build/external-benchmark-validation/programs.tsv`
+- `build/external-benchmark-validation/candidates.tsv`
+- `build/external-benchmark-validation/rejection-reasons.tsv`
+- `build/external-benchmark-validation/summary.md`
+- `build/external-benchmark-validation/programs/<name>/` for raw/O2 IR,
+  executables, pass logs, commands, stdout, and stderr
+
+Candidate counts refer to LLVM memory objects encountered by the pass, not to
+benchmark-program counts. Many real programs contain string and other memory
+objects that are counted as candidates and then conservatively rejected as
+unsupported; the raw candidate TSV retains every such decision. Differential
+agreement covers only commands that terminate successfully and compares the
+same deterministic stdout channel used by the suite's reference-output tests.
+The sole execution skip is `office-ispell`: its packaged command exits with
+`Illegal format hash table` for both the rebuilt baseline and the original
+test-suite executable, so this is a harness/data compatibility skip rather than
+a transformation failure. The external evidence is validation on one x86-64
+DataLayout and one finite workload per program; it does not establish
+target-independent benefit, runtime speedup, physical-memory reduction, or
+universal equivalence.
+
+## Build the paper
+
+From Windows PowerShell, after the full test suite:
 
 ```powershell
-& 'C:\Users\admin\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\python.exe' tools\build_paper_pdf.py
+powershell -ExecutionPolicy Bypass -File tools/build_paper.ps1
 ```
 
-The generated PDF is written to:
+This generates evidence-backed PDF figures and LaTeX tables, compiles
+`paper/main.tex`, and writes
+`output/pdf/adaptive-width-memory-narrowing-paper.pdf`.
 
-```text
-output/pdf/adaptive-width-memory-narrowing-paper.pdf
-```
+## Scope
 
-Diagram assets used to explain the pass live in:
+Supported inference includes constants, truncation, zero/sign extension,
+constant masks, OR, compatible selects and bounded PHIs, plus a conservative
+KnownBits fallback. Arbitrary LLVM integer widths such as `i5` are supported.
 
-```text
-paper/figures/
-```
-
-## Current Capabilities
-
-The pass currently handles:
-
-- local stack integer arrays;
-- internal/private integer globals;
-- direct GEP, load, and store users;
-- constants, `trunc`, `zext`, `sext`, `and` with a constant mask, `or`, `select`,
-  simple bounded `phi` values, and LLVM `KnownBits`-bounded expressions as
-  stored values;
-- narrowed loads by inserting either a `zext` or `sext` back to the original
-  load type, depending on the proven stored-value family.
-
-Each run prints a deterministic summary line, for example:
-
-```text
-[adaptive-width-mem] summary candidate-globals=4 candidate-allocas=6 safe=8 blocked=2 unknown-width=2 not-profitable=1 rewrite-blocked=0 transformed-globals=2 transformed-allocas=3 loads-rewritten=2 stores-rewritten=3 bits-saved-per-element=67
-```
-
-Example transformations:
-
-```llvm
-%mask_arr = alloca [2 x i16]
-```
-
-becomes:
-
-```llvm
-%mask_arr.narrow = alloca [2 x i5]
-```
-
-and:
-
-```llvm
-%loaded = load i16, ptr %slot
-```
-
-becomes:
-
-```llvm
-%loaded.narrow = load i5, ptr %slot.narrow
-%loaded.wide = zext i5 %loaded.narrow to i16
-```
-
-## Safety Policy
-
-The transformation tracks whether a candidate's stored values are safely
-restored with zero-extension or sign-extension. It transforms only candidates
-where every stored value agrees on one extension family under the current local
-inference rules:
-
-- integer constants that fit the proposed active-bit width;
-- zero-extension chains;
-- sign-extension chains;
-- truncation when the resulting width is the original stored width;
-- constant masks such as `and i16 %x, 31`.
-- `or`, `select`, and `phi` only when every contributing value is bounded by
-  the same local inference rules and the same extension family.
-- LLVM `computeKnownBits` is used as a conservative fallback when local rules do
-  not directly recognize an integer expression.
-
-Mixed signed/unsigned candidates, such as a `select` between `sext` and `zext`
-values, are treated as unknown and are not narrowed.
-
-## Conservative Rejections
-
-The pass currently refuses:
-
-- external globals;
-- scalar allocas;
-- floating-point memory;
-- pointer escapes such as calls;
-- unknown stored values;
-- aggregate loads;
-- bitcast and address-space-cast transform cases;
-- any candidate whose proposed width is not smaller than the original width.
-
-These rejections are deliberate. The project is structured so each broader case
-can be added with a focused test.
+Not implemented: heap narrowing, structure narrowing, vectorizer integration,
+machine learning, a general target-aware cost model, generic alias-analysis
+infrastructure, scalar register narrowing, or universal formal verification.

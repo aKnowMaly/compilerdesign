@@ -12,7 +12,7 @@ fi
 
 cmake --build "$ROOT_DIR/build" >/dev/null
 
-printf 'input\tcandidate_globals\tcandidate_allocas\tsafe\tblocked\tunknown_width\tnot_profitable\trewrite_blocked\ttransformed_globals\ttransformed_allocas\tloads_rewritten\tstores_rewritten\tbits_saved_per_element\n' > "$REPORT"
+printf 'input\tcandidate_globals\tcandidate_allocas\tsafe\tblocked\tunknown_width\tno_meaningful_reduction\trewrite_blocked\ttransformed_globals\ttransformed_allocas\tloads_rewritten\tstores_rewritten\tbits_saved_per_element\n' > "$REPORT"
 
 run_input() {
   local input="$1"
@@ -37,7 +37,7 @@ run_input() {
     "$(get_field safe)" \
     "$(get_field blocked)" \
     "$(get_field unknown-width)" \
-    "$(get_field not-profitable)" \
+    "$(get_field no-meaningful-reduction)" \
     "$(get_field rewrite-blocked)" \
     "$(get_field transformed-globals)" \
     "$(get_field transformed-allocas)" \

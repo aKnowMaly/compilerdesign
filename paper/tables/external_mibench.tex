@@ -1,0 +1,22 @@
+\begin{table*}[t]
+\centering
+\caption{External validation on 17 MiBench programs. Allocation is compared on Method A's common opportunity set; accepted-set percentages have different denominators.}
+\label{tab:external-mibench}
+\small
+\setlength{\tabcolsep}{5pt}
+\begin{tabular}{lrr}
+\toprule
+Metric & A: conservative & B: + allocation guard \\
+\midrule
+Candidates / safety-safe / safety-blocked & 5003 / 255 / 4748 & 5003 / 255 / 4748 \\
+Transformed objects & 42 & 40 \\
+Positive / neutral / negative & 40 / 2 / 0 & 40 / 0 / 0 \\
+Allocation-benefit precision & 95.24\% & 100.00\% \\
+Common-set allocation & 2700 $\rightarrow$ 1448 B & 2700 $\rightarrow$ 1448 B \\
+Common-set saving & 1252 B (46.37\%) & 1252 B (46.37\%) \\
+Raw / O2 IR assignment delta & +109 / +119 & +100 / +53 \\
+Executable-size delta & +216 B & +208 B \\
+Differential pass / fail / skip & 16 / 0 / 1 & 16 / 0 / 1 \\
+\bottomrule
+\end{tabular}
+\end{table*}

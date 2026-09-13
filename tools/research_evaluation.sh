@@ -30,7 +30,7 @@ NR == 1 { next }
   safe += $4
   blocked += $5
   unknown_width += $6
-  not_profitable += $7
+  no_meaningful_reduction += $7
   rewrite_blocked += $8
   transformed_globals += $9
   transformed_allocas += $10
@@ -58,7 +58,7 @@ END {
   printf "| safe candidates | %d |\n", safe
   printf "| blocked candidates | %d |\n", blocked
   printf "| unknown-width candidates | %d |\n", unknown_width
-  printf "| not-profitable candidates | %d |\n", not_profitable
+  printf "| candidates with no meaningful width reduction | %d |\n", no_meaningful_reduction
   printf "| rewrite-blocked candidates | %d |\n", rewrite_blocked
   printf "| transformed globals | %d |\n", transformed_globals
   printf "| transformed allocas | %d |\n", transformed_allocas
@@ -70,7 +70,7 @@ END {
   print ""
   print "## Per-input report"
   print ""
-  print "| input | candidate globals | candidate allocas | safe | blocked | unknown width | not profitable | rewrite blocked | transformed globals | transformed allocas | loads rewritten | stores rewritten | bits saved per element |"
+  print "| input | candidate globals | candidate allocas | safe | blocked | unknown width | no meaningful reduction | rewrite blocked | transformed globals | transformed allocas | loads rewritten | stores rewritten | bits saved per element |"
   print "|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|"
 }
 ' "$REPORT_TSV" > "$SUMMARY_MD"

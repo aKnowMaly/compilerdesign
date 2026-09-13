@@ -31,6 +31,5 @@
   <text x="827" y="86" class="text">Verify</text>
   <text x="827" y="112" class="small">LLVM IR</text>
   <rect x="265" y="165" width="370" height="48" class="reject"/>
-  <text x="450" y="195" class="text">Unsupported, unknown, or unprofitable candidates are logged and left unchanged</text>
+  <text x="450" y="195" class="text">Unsupported, unknown, or non-reducing candidates are logged and left unchanged</text>
 </svg>
-

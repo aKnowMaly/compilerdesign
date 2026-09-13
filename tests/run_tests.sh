@@ -4,6 +4,7 @@ set -euo pipefail
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 PLUGIN="$ROOT_DIR/build/AdaptiveWidthMemoryPass.so"
 LLVM_DIR="${LLVM_DIR:-/usr/lib/llvm-18/lib/cmake/llvm}"
+TEST_STATUS="$ROOT_DIR/build/final-test-status.tsv"
 
 if [[ ! -f "$ROOT_DIR/build/build.ninja" ]]; then
   cmake -S "$ROOT_DIR" -B "$ROOT_DIR/build" -G Ninja -DLLVM_DIR="$LLVM_DIR"
@@ -63,6 +64,17 @@ opt-18 -load-pass-plugin="$PLUGIN" -passes=adaptive-width-mem \
 FileCheck-18 "$ROOT_DIR/tests/transform_alloca.ll" --check-prefix=LOG \
   --input-file "$ROOT_DIR/build/transform_alloca.log"
 
+opt-18 -load-pass-plugin="$PLUGIN" -passes=adaptive-width-mem-target-aware \
+  -verify-each -S "$ROOT_DIR/tests/target_allocation_guard.ll" \
+  -o "$ROOT_DIR/build/target_allocation_guard.out.ll" \
+  2> "$ROOT_DIR/build/target_allocation_guard.log"
+opt-18 -passes=verify -disable-output \
+  "$ROOT_DIR/build/target_allocation_guard.out.ll"
+FileCheck-18 "$ROOT_DIR/tests/target_allocation_guard.ll" --check-prefix=IR \
+  --input-file "$ROOT_DIR/build/target_allocation_guard.out.ll"
+FileCheck-18 "$ROOT_DIR/tests/target_allocation_guard.ll" --check-prefix=LOG \
+  --input-file "$ROOT_DIR/build/target_allocation_guard.log"
+
 "$ROOT_DIR/tools/demo_report.sh" > "$ROOT_DIR/build/demo_report.stdout"
 FileCheck-18 "$ROOT_DIR/examples/report.check" \
   --input-file "$ROOT_DIR/build/demo_report.stdout"
@@ -88,5 +100,8 @@ grep -q $'\tFAIL\t' "$ROOT_DIR/build/runtime-differential/runtime-differential.t
   echo "runtime differential test failed" >&2
   exit 1
 }
+
+printf 'status\tllvm_version\tcompiler\tenvironment\npassed\t18\tclang-18\tWSL Ubuntu on Windows\n' > "$TEST_STATUS"
+python3 "$ROOT_DIR/tools/final_evaluation.py" > "$ROOT_DIR/build/final_evaluation.stdout"
 
 echo "adaptive-width-mem tests passed"

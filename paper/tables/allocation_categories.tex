@@ -1,0 +1,19 @@
+\begin{table*}[t]
+\centering
+\caption{DataLayout-derived allocation results by benchmark category. Bytes are summed over transformed objects only.}
+\label{tab:allocation-categories}
+\small
+\begin{tabular}{lrrrrr}
+\toprule
+Category & Objects & Baseline B & Transformed B & Saved B & Reduction \\
+\midrule
+dsp\_signal & 3 & 22 & 15 & 7 & 31.82\% \\
+embedded\_state & 5 & 28 & 18 & 10 & 35.71\% \\
+image\_pixel & 4 & 28 & 14 & 14 & 50.00\% \\
+lookup\_global & 5 & 10 & 5 & 5 & 50.00\% \\
+packet\_header & 5 & 42 & 21 & 21 & 50.00\% \\
+signed\_values & 2 & 8 & 4 & 4 & 50.00\% \\
+unsigned\_ranges & 2 & 12 & 6 & 6 & 50.00\% \\
+\bottomrule
+\end{tabular}
+\end{table*}

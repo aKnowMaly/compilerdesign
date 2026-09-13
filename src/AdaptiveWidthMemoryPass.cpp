@@ -47,8 +47,9 @@ struct RunStats {
   unsigned SafeCandidates = 0;
   unsigned BlockedCandidates = 0;
   unsigned UnknownWidthCandidates = 0;
-  unsigned NotProfitableCandidates = 0;
+  unsigned NoMeaningfulReductionCandidates = 0;
   unsigned RewriteBlockedCandidates = 0;
+  unsigned NoTargetAllocationBenefitCandidates = 0;
   unsigned TransformedGlobals = 0;
   unsigned TransformedAllocas = 0;
   unsigned LoadsRewritten = 0;
@@ -60,6 +61,7 @@ struct PassConfig {
   bool Transform = true;
   bool ProcessGlobals = true;
   bool ProcessAllocas = true;
+  bool RequireTargetAllocationBenefit = false;
   StringRef ModeName = "adaptive-width-mem";
 };
 
@@ -319,6 +321,8 @@ private:
     }
 
     Type *NewAllocatedTy = replaceIntegerElementType(AllocatedTy, NewElementTy);
+    if (!hasTargetAllocationBenefit(AI, AllocatedTy, NewAllocatedTy))
+      return false;
     auto *NewAI = new AllocaInst(NewAllocatedTy, AI.getAddressSpace(),
                                  AI.getArraySize(), AI.getAlign(),
                                  AI.getName() + ".narrow", &AI);
@@ -337,7 +341,17 @@ private:
 
     errs() << "[adaptive-width-mem] transform alloca name=" << NewAI->getName()
            << " original-bits=" << Width.OriginalBits
-           << " narrowed-bits=" << Width.ProposedBits << "\n";
+           << " narrowed-bits=" << Width.ProposedBits << " original-type=\"";
+    AllocatedTy->print(errs());
+    errs() << "\" transformed-type=\"";
+    NewAllocatedTy->print(errs());
+    errs() << "\" original-alloc-bytes="
+           << DL->getTypeAllocSize(AllocatedTy).getFixedValue()
+           << " transformed-alloc-bytes="
+           << DL->getTypeAllocSize(NewAllocatedTy).getFixedValue()
+           << " original-abi-align=" << DL->getABITypeAlign(AllocatedTy).value()
+           << " transformed-abi-align="
+           << DL->getABITypeAlign(NewAllocatedTy).value() << "\n";
     ++Stats.TransformedAllocas;
     Stats.BitsSavedPerElement += Width.OriginalBits - Width.ProposedBits;
     return true;
@@ -365,6 +379,8 @@ private:
     }
 
     Type *NewValueTy = replaceIntegerElementType(ValueTy, NewElementTy);
+    if (!hasTargetAllocationBenefit(GV, ValueTy, NewValueTy))
+      return false;
     Constant *NewInitializer = nullptr;
     if (GV.hasInitializer())
       NewInitializer = narrowConstant(GV.getInitializer(), NewValueTy);
@@ -391,7 +407,17 @@ private:
 
     errs() << "[adaptive-width-mem] transform global name=" << NewGV->getName()
            << " original-bits=" << Width.OriginalBits
-           << " narrowed-bits=" << Width.ProposedBits << "\n";
+           << " narrowed-bits=" << Width.ProposedBits << " original-type=\"";
+    ValueTy->print(errs());
+    errs() << "\" transformed-type=\"";
+    NewValueTy->print(errs());
+    errs() << "\" original-alloc-bytes="
+           << DL->getTypeAllocSize(ValueTy).getFixedValue()
+           << " transformed-alloc-bytes="
+           << DL->getTypeAllocSize(NewValueTy).getFixedValue()
+           << " original-abi-align=" << DL->getABITypeAlign(ValueTy).value()
+           << " transformed-abi-align=" << DL->getABITypeAlign(NewValueTy).value()
+           << "\n";
     ++Stats.TransformedGlobals;
     Stats.BitsSavedPerElement += Width.OriginalBits - Width.ProposedBits;
     return true;
@@ -401,7 +427,28 @@ private:
     if (Width.HasUnknownStoredValue)
       ++Stats.UnknownWidthCandidates;
     else if (Width.OriginalBits != 0 && Width.ProposedBits >= Width.OriginalBits)
-      ++Stats.NotProfitableCandidates;
+      ++Stats.NoMeaningfulReductionCandidates;
+  }
+
+  bool hasTargetAllocationBenefit(Value &Root, Type *OriginalTy,
+                                  Type *TransformedTy) {
+    if (!Config.RequireTargetAllocationBenefit)
+      return true;
+
+    uint64_t BaselineBytes =
+        DL->getTypeAllocSize(OriginalTy).getFixedValue();
+    uint64_t TransformedBytes =
+        DL->getTypeAllocSize(TransformedTy).getFixedValue();
+    if (TransformedBytes < BaselineBytes)
+      return true;
+
+    ++Stats.NoTargetAllocationBenefitCandidates;
+    errs() << "[adaptive-width-mem] reject candidate=";
+    printValueName(errs(), Root);
+    errs() << " reason=no-target-allocation-benefit"
+           << " baseline-alloc-bytes=" << BaselineBytes
+           << " transformed-alloc-bytes=" << TransformedBytes << "\n";
+    return false;
   }
 
   Constant *narrowConstant(Constant *C, Type *NewTy) {
@@ -456,12 +503,16 @@ private:
       if (auto *LI = dyn_cast<LoadInst>(Usr)) {
         if (LI->getPointerOperand() != &Ptr || LI->getType() != &OldElementTy)
           return false;
+        if (LI->isVolatile() || LI->isAtomic())
+          return false;
         continue;
       }
 
       if (auto *SI = dyn_cast<StoreInst>(Usr)) {
         if (SI->getPointerOperand() != &Ptr ||
             SI->getValueOperand()->getType() != &OldElementTy)
+          return false;
+        if (SI->isVolatile() || SI->isAtomic())
           return false;
         continue;
       }
@@ -543,13 +594,16 @@ private:
            << " safe=" << Stats.SafeCandidates
            << " blocked=" << Stats.BlockedCandidates
            << " unknown-width=" << Stats.UnknownWidthCandidates
-           << " not-profitable=" << Stats.NotProfitableCandidates
+           << " no-meaningful-reduction="
+           << Stats.NoMeaningfulReductionCandidates
            << " rewrite-blocked=" << Stats.RewriteBlockedCandidates
            << " transformed-globals=" << Stats.TransformedGlobals
            << " transformed-allocas=" << Stats.TransformedAllocas
            << " loads-rewritten=" << Stats.LoadsRewritten
            << " stores-rewritten=" << Stats.StoresRewritten
            << " bits-saved-per-element=" << Stats.BitsSavedPerElement
+           << " no-target-allocation-benefit="
+           << Stats.NoTargetAllocationBenefitCandidates
            << "\n";
   }
 
@@ -823,6 +877,10 @@ private:
 
       if (auto *LI = dyn_cast<LoadInst>(Usr)) {
         if (LI->getPointerOperand() == &Ptr) {
+          if (LI->isVolatile() || LI->isAtomic()) {
+            noteUnsupported(Root, *Usr, "volatile-or-atomic-memory", Summary);
+            continue;
+          }
           ++Summary.SupportedUses;
           ++Summary.LoadUses;
           continue;
@@ -831,6 +889,10 @@ private:
 
       if (auto *SI = dyn_cast<StoreInst>(Usr)) {
         if (SI->getPointerOperand() == &Ptr) {
+          if (SI->isVolatile() || SI->isAtomic()) {
+            noteUnsupported(Root, *Usr, "volatile-or-atomic-memory", Summary);
+            continue;
+          }
           ++Summary.SupportedUses;
           ++Summary.StoreUses;
           continue;
@@ -898,6 +960,9 @@ extern "C" LLVM_ATTRIBUTE_WEAK PassPluginLibraryInfo llvmGetPassPluginInfo() {
                   } else if (Name == "adaptive-width-mem-globals") {
                     Config.ProcessAllocas = false;
                     Config.ModeName = "adaptive-width-mem-globals";
+                  } else if (Name == "adaptive-width-mem-target-aware") {
+                    Config.RequireTargetAllocationBenefit = true;
+                    Config.ModeName = "adaptive-width-mem-target-aware";
                   } else {
                     return false;
                   }

@@ -1,330 +1,907 @@
-\documentclass[10pt,twocolumn]{article}
+\documentclass[11pt,twocolumn]{article}
 
-\usepackage[a4paper,margin=0.75in]{geometry}
-\usepackage{times}
+\usepackage[a4paper,margin=1in,columnsep=0.24in]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage{newtxtext,newtxmath}
 \usepackage{microtype}
 \usepackage{amsmath}
-\usepackage{amssymb}
 \usepackage{booktabs}
+\usepackage{graphicx}
 \usepackage{listings}
 \usepackage{xcolor}
+\usepackage{balance}
+\usepackage{enumitem}
+\usepackage{titlesec}
+\usepackage{tabularx}
+\usepackage[numbers,sort&compress]{natbib}
 \usepackage[hidelinks]{hyperref}
 
+\input{generated_metrics}
+
+\definecolor{codegray}{RGB}{246,247,249}
 \lstdefinelanguage{LLVM}{
-  morekeywords={define,declare,ret,br,switch,invoke,call,load,store,alloca,global,internal,private,external,trunc,zext,sext,and,or,select,phi,getelementptr,inbounds},
+  morekeywords={define,ret,br,load,store,alloca,global,internal,private,trunc,zext,sext,and,or,select,phi,getelementptr,inbounds},
   sensitive=true,
   morecomment=[l]{;}
 }
 \lstset{
-  basicstyle=\ttfamily\footnotesize,
+  basicstyle=\ttfamily\scriptsize,
   columns=fullflexible,
   breaklines=true,
   frame=single,
-  language=LLVM
+  backgroundcolor=\color{codegray},
+  language=LLVM,
+  aboveskip=4pt,
+  belowskip=4pt,
+  xleftmargin=2pt,
+  xrightmargin=2pt
 }
+\setlength{\parindent}{0.15in}
+\setlength{\parskip}{0pt}
+\setlist{nosep,leftmargin=*}
+\titleformat{\section}{\bfseries\normalsize}{\thesection}{0.45em}{}
+\titleformat{\subsection}{\bfseries\small}{\thesubsection}{0.4em}{}
+\titlespacing*{\section}{0pt}{7pt plus 2pt minus 1pt}{3pt}
+\titlespacing*{\subsection}{0pt}{5pt plus 1pt minus 1pt}{2pt}
+\renewcommand{\thetable}{\Roman{table}}
+\setlength{\textfloatsep}{6pt plus 2pt minus 2pt}
+\setlength{\floatsep}{5pt plus 2pt minus 2pt}
+\setlength{\intextsep}{5pt plus 2pt minus 2pt}
+\setlength{\bibsep}{0.5pt}
+\renewcommand{\bibfont}{\scriptsize}
+\Urlmuskip=0mu plus 1mu
 
-\title{Conservative Adaptive Bit-Width Narrowing for LLVM Memory Objects}
-\author{Anonymous Artifact Draft}
+\title{\vspace{-0.55in}\bfseries Target-Aware Conservative Width Narrowing\\of LLVM Memory Objects}
+\author{\textbf{SheeshBakht}\\[-1pt]
+  \normalsize\texttt{pandeyakshat466@gmail.com}}
 \date{}
 
 \begin{document}
 \maketitle
+\vspace{-0.35in}
 
 \begin{abstract}
-Integer values stored in memory often occupy fewer significant bits than their
-declared source-level type. While scalar integer narrowing is a familiar
-compiler optimization theme, narrowing memory objects is more delicate because
-the transformation must preserve load/store semantics, pointer use structure,
-and signedness restoration. This paper presents a conservative LLVM New Pass
-Manager prototype, \textsc{AdaptiveWidthMemoryPass}, that narrows selected local
-stack arrays and internal/private globals when all observed stores can be
-classified by local bit-width inference. The pass rewrites memory object element
-types, truncates stores, and restores narrowed loads with either zero-extension
-or sign-extension according to a tracked extension family. Unsupported pointer
-uses, mixed signed/unsigned value families, and unknown stored values are
-rejected rather than speculated on. On the current fixture corpus, the prototype
-identifies 28 memory-object candidates, transforms 20 of them, and records a
-static summed per-element width reduction of 234 bits. On 32 C-derived
-kernels, it transforms 26 memory-object candidates and exposes the expected
-tradeoff between narrower memory and additional cast instructions. These results
-are not presented as general benchmark claims; they establish a reproducible
-artifact and a safety-first baseline for future memory bit-width optimization
-experiments.
+Unused high bits do not guarantee that narrowing an LLVM memory object reduces
+its target-derived allocation: DataLayout rounding can absorb a legal type-width
+change. We present \textsc{AdaptiveWidthMemoryPass}, a conservative LLVM 18
+prototype for selected stack arrays and internal/private globals. Its isolated
+target-aware guard accepts a safe rewrite only when LLVM DataLayout reports a
+smaller complete-object allocation. In a controlled \BenchmarkCount{}-kernel,
+\CandidateTotal{}-candidate evaluation, Method A accepts \ATransformed{}
+objects (\APositive{} positive, \AZero{} neutral), whereas Method B accepts
+\BTransformed{}, all positive; allocation-benefit precision rises from
+\APrecision\% to \BPrecision\% while both retain the same
+\CommonSavedBytes{}-byte common-set saving. External validation over
+\ExternalPrograms{} MiBench programs and \ExternalCandidates{} candidates
+repeats the selection effect: A accepts \ExternalAPositive{} positive and
+\ExternalAZero{} neutral rewrites, while B retains all
+\ExternalBPositive{} positive rewrites and removes both neutral ones
+(\ExternalAPrecision\% to \ExternalBPrecision\%). Both save
+\ExternalCommonSaved{} bytes on the common set. MiBench O2 IR growth falls from
+\ExternalAOtwoIR{} to \ExternalBOtwoIR{}, but executable sizes increase by
+\ExternalAExecutableDelta{} and \ExternalBExecutableDelta{} bytes. Thus the
+evidence supports target-aware selection precision, not runtime, energy,
+physical-memory, or code-size improvement.
 \end{abstract}
+
+\noindent\textbf{Keywords:} LLVM, bit-width inference, memory-object narrowing,
+KnownBits, conservative compiler transformation, differential testing
 
 \section{Introduction}
 
-Many programs store values in integer containers wider than the value range
-required at a particular program point. Examples include masked counters,
-small enumerations, byte-derived values stored in 16- or 32-bit arrays, and
-sign-extended offsets later stored in wider integer memory. Narrowing such
-memory objects can reduce static storage width and may enable downstream
-optimizations. However, memory narrowing is more constrained than scalar
-narrowing: every load and store must be rewritten consistently, pointer uses may
-escape, and signedness-sensitive values must be restored with the correct
-extension operation.
+\subsection{Motivation}
 
-This work develops a small, inspectable LLVM pass that prioritizes correctness
-and reproducibility over broad coverage. The prototype narrows only integer
-arrays allocated on the stack and internal/private integer globals. It accepts
-only direct pointer uses through getelementptr, load, and store. It performs
-local stored-value inference over constants, casts, masks, simple select/phi/or
-compositions, and LLVM's KnownBits information. If a candidate cannot be proven
-safe and profitable under these rules, it is left unchanged and reported with a
-reason.
+Source programs commonly use convenient word-sized types even when a particular
+memory object stores masks, flags, small state identifiers, pixel components, or
+sign-extended deltas. LLVM's integer type system permits arbitrary fixed widths,
+so the intermediate representation can express an \texttt{i5} value even when
+the source language and target machine favor conventional byte widths
+\citep{llvmLangRef}. This representational freedom creates an optimization
+opportunity, but not an automatic target-level benefit. A narrower LLVM type may
+occupy the same DataLayout allocation after byte and alignment rounding, may be
+widened by a backend, and may require explicit casts that increase IR size.
+Thus bit evidence answers whether a width can represent a value; it does not by
+itself answer whether changing an object is useful for the evaluated layout.
 
-The contributions of this draft are:
-\begin{itemize}
-  \item a conservative memory-object narrowing transformation for LLVM IR;
-  \item an explicit extension-family safety policy for zero- and sign-restored
-        loads;
-  \item deterministic candidate classification and rejection logging; and
-  \item a reproducible metrics harness that reports candidate coverage,
-        transformation counts, static width deltas, and IR instruction overhead.
-\end{itemize}
+Memory objects make the question harder than scalar expressions. Every store
+must fit the new representation, every load must reconstruct the same logical
+value, all pointer paths must remain rewriteable, and signed values must not be
+mistaken for zero-extended values. A single escaping pointer, unsupported user,
+volatile access, or uncertain stored value is enough to invalidate the local
+transformation model. The central design choices in this work are therefore to
+make rejection explicit and deterministic and to separate safety from
+target-aware acceptance.
 
-\section{Motivation}
+\subsection{Problem Statement}
 
-Consider a local array whose stored values are masked before every store:
+Given an eligible LLVM memory object with integer element width $W$, the first
+goal is to infer a smaller safe width $w<W$ for the supported use graph while
+preserving admitted load/store behavior. The second is to determine whether the
+complete rewritten type occupies fewer bytes under the module's active
+DataLayout. The prototype does not solve a global width-minimization or general
+target cost problem. It performs conservative width inference followed by one
+measurable acceptance test; uncertainty or allocation neutrality retains the
+original object.
 
-\begin{lstlisting}
-%arr = alloca [2 x i16]
-%masked = and i16 %x, 31
-store i16 %masked, ptr %slot
-%v = load i16, ptr %slot
-\end{lstlisting}
+\subsection{Research Questions}
 
-The stored value needs only five bits. The pass can replace the array with
-\texttt{[2 x i5]}, truncate the store, and zero-extend the load back to the
-original load type:
+The evaluation answers four questions bounded by the available measurements:
 
-\begin{lstlisting}
-%arr.narrow = alloca [2 x i5]
-%masked.narrow = trunc i16 %masked to i5
-store i5 %masked.narrow, ptr %slot.narrow
-%v.narrow = load i5, ptr %slot.narrow
-%v.wide = zext i5 %v.narrow to i16
-\end{lstlisting}
+\begin{description}[style=nextline,leftmargin=0pt]
+  \item[RQ1:] How effectively does the analysis identify evaluated LLVM memory
+  objects that satisfy its conservative narrowing conditions?
+  \item[RQ2:] How much declared per-element integer width is removed from
+  transformed objects?
+  \item[RQ3:] Does adding a DataLayout allocation guard improve the fraction of
+  accepted transformations that reduce target-derived allocation while
+  retaining the available allocation reduction, and what are its raw/O2 IR and
+  executable-file effects?
+  \item[RQ4:] Do baseline and transformed programs produce identical outputs in
+  the deterministic differential suite?
+\end{description}
 
-For signed byte-derived values, zero-extension is not equivalent. Therefore the
-prototype tracks whether the stored-value family must be restored by
-\texttt{zext} or \texttt{sext}. A candidate containing a mixture of both
-families is rejected.
+\subsection{Contributions}
 
-\section{Safety Model}
+This work contributes: (1) conservative object-level width inference for a
+narrowly scoped LLVM memory transformation; (2) an explicit safety and rejection
+framework linking pointer uses, value fit, extension families, and load/store
+reconstruction; (3) a target-aware DataLayout guard, deliberately separated
+from semantic safety; (4) a reproducible two-level measurement method that
+distinguishes declared IR width from target-derived complete-object allocation;
+and (5) a controlled A/B evaluation showing that neutral rewrites can be removed
+without losing the common-set allocation reduction or differential agreement;
+and (6) external validation on established MiBench programs showing the same
+selection behavior outside the purpose-built kernels.
 
-Let a candidate memory object have original element type $iN$ and proposed
-narrow element type $iK$ where $K < N$. The transformation is allowed only if:
+\section{Background}
 
-\begin{enumerate}
-  \item the memory object is a supported stack array or internal/private global;
-  \item all pointer users are recursively limited to supported GEP, load, and
-        store operations;
-  \item every store to the object has an inferred width at most $K$;
-  \item every inferred stored value agrees on one extension family
-        $E \in \{\mathrm{zero}, \mathrm{sign}\}$; and
-  \item the candidate is profitable, i.e., $K < N$.
-\end{enumerate}
+\subsection{LLVM Integer Representation}
 
-Loads from the narrowed object are restored to $iN$ using the selected extension
-family. Thus the intended local preservation condition is:
+LLVM integers are written \texttt{iN}, where $N$ is a positive bit width. The IR
+defines explicit \texttt{trunc}, \texttt{zext}, and \texttt{sext} operations;
+the latter two encode different interpretations of the same narrowed bit
+pattern. Opaque pointers separate pointer syntax from pointee types, but GEP
+instructions still carry a source element type that must be rebuilt when an
+aggregate element changes. These details make memory narrowing a graph rewrite,
+not a local substitution.
 
-\[
-  \mathrm{extend}_E(\mathrm{trunc}_K(v)) = v
-\]
+\subsection{Static Bit and Value Information}
 
-for each stored value $v$ that may be loaded from the object. The current
-implementation checks this condition through syntactic and KnownBits-based
-inference rules rather than whole-program analysis. If inference fails, the
-candidate is treated as unknown and is not transformed.
+LLVM's KnownBits abstraction records bits proven zero or one and supports
+transformations that depend on partial value information
+\citep{llvmKnownBits}. DemandedBits addresses the complementary question of
+which result bits can influence uses \citep{llvmDemandedBits}. ConstantRange
+represents possibly wrapped integer ranges and exposes unsigned and signed
+width queries \citep{llvmConstantRange}. ScalarEvolution reasons about induction
+variables and loop-evolving expressions \citep{llvmScalarEvolution}. The frozen
+MVP directly uses \texttt{computeKnownBits} only as a conservative fallback;
+DemandedBits, ConstantRange, and ScalarEvolution are relevant comparison points,
+not hidden features of the implementation.
 
-\subsection{Invariant and Preservation Sketch}
+\subsection{LLVM Memory Objects}
 
-For every transformed object $O$, the pass maintains the following local
-invariant: every value stored through a supported pointer path to $O$ belongs to
-one inferred extension family $E$ and has representable width at most $K$, the
-new element width. Because all admitted loads and stores are rewritten through
-the same rebuilt pointer graph, each transformed load observes a value previously
-stored in truncated form. Since the inference phase requires
-$\mathrm{extend}_E(\mathrm{trunc}_K(v)) = v$ for every admitted stored value,
-restoring the narrowed load with $E$ preserves the original loaded value. Cases
-outside this local argument--escaping pointers, unsupported casts, aggregate
-loads, volatile/atomic behavior, unknown values, and mixed extension families--
-are rejected before rewriting.
-
-This is not a whole-program proof. It is a deliberately local preservation
-argument for the subset of LLVM IR accepted by the implementation. The
-deterministic rejection policy is therefore part of the safety model rather than
-an engineering afterthought.
-
-\section{Algorithm and Implementation}
-
-The pass is implemented as an LLVM 18 New Pass Manager plugin. It exposes four
-pipelines: full analysis/transformation, log-only analysis, stack-allocation-only
-transformation, and global-only transformation.
-
-\subsection{Candidate Discovery}
-
-The pass scans functions for local stack integer arrays and scans the module for
-internal/private integer globals. Scalar allocas, floating-point objects,
-external globals, aggregate loads, and pointer escapes are rejected. A recursive
-pointer-user walk admits GEP, load, and store users and records unsupported users
-for diagnostic output.
-
-\subsection{Width Inference}
-
-The inference engine computes a required bit width and an extension family for
-stored values. It currently recognizes:
-
-\begin{itemize}
-  \item integer constants;
-  \item truncation, including C-style \texttt{trunc(and i32 \%x, mask)} forms;
-  \item zero-extension and sign-extension chains;
-  \item constant masks;
-  \item bitwise OR;
-  \item select and bounded phi nodes when all arms agree; and
-  \item LLVM KnownBits as a conservative fallback.
-\end{itemize}
-
-For compositions such as select, phi, and OR, operands must agree on the same
-extension family. This intentionally rejects mixed signed/unsigned candidates.
-
-\subsection{IR Rewriting}
-
-For a profitable candidate, the pass creates a replacement memory object with
-the narrowed integer element type. It rebuilds GEPs using the new source element
-type, rewrites stores by truncating stored values to the new type, rewrites loads
-from the new type, and extends loaded values back to the original type. The old
-load/GEP/object instructions are erased only after their replacements have been
-installed and the resulting IR is verified by the test harness.
-
-\subsection{Transformation Algorithm}
-
-Algorithm~\ref{alg:narrowing} summarizes the pass at a high level. The pass is
-structured as a sequence of filters: candidate discovery, use-graph validation,
-stored-value inference, profitability testing, and finally IR rewriting. This
-ordering is deliberate: it keeps unsound cases outside the rewriting phase and
-makes each rejection observable in the diagnostic log.
-
-\begin{figure}[t]
-\begin{lstlisting}[language={}]
-for object O in stack_arrays + internal_globals:
-  if not integer_memory_object(O):
-    reject(O, "non-integer")
-    continue
-  U = collect_supported_pointer_uses(O)
-  if U has escaping or unsupported users:
-    reject(O, "unsupported-user")
-    continue
-  W, E = infer_width_and_extension(stores(O))
-  if inference failed:
-    reject(O, "unknown-width")
-    continue
-  if W >= original_element_width(O):
-    reject(O, "not-profitable")
-    continue
-  O2 = create_narrow_object(O, W)
-  rewrite_geps_loads_stores(O, O2, E)
-  erase_dead_old_ir(O)
-\end{lstlisting}
-\caption{High-level memory-narrowing algorithm.}
-\label{alg:narrowing}
-\end{figure}
-
-\subsection{Pass Architecture}
-
-The implementation separates four concerns: (1) candidate discovery, (2)
-recursive pointer-use classification, (3) width and extension-family inference,
-and (4) IR rewriting. The metrics harness consumes the same deterministic log
-output used by the tests, so paper tables are generated from the artifact rather
-than manually transcribed.
-
-\section{Evaluation Methodology}
-
-The artifact includes two evaluation layers. First, fixture-level tests exercise
-individual transformation and rejection behaviors. Second, a benchmark-metrics
-harness compiles small C kernels to LLVM IR with Clang 18, applies a light
-\texttt{mem2reg} normalization step to remove irrelevant scalar spills, runs the
-pass, verifies the transformed IR, and emits tab-separated and Markdown results.
-
-Metrics include candidate counts, safety classifications, transformed globals
-and allocas, rewritten loads and stores, static summed per-element bit savings,
-LLVM IR instruction-count delta before and after LLVM default O2, and coarse
-process-level pass wall time. The artifact also generates deterministic runtime
-differential harnesses for each C kernel; baseline and transformed executables
-are compiled and compared on checksum outputs. The wall-time and
-instruction-count metrics are intended for artifact regression tracking, not as
-rigorous performance claims.
-
-\input{tables/research_evaluation}
-\input{tables/benchmark_metrics}
-
-\section{Results}
-
-Table~\ref{tab:fixture-results} shows the fixture-level result. Across seven
-inputs, the pass identifies 28 candidates. It classifies 25 as safe under the
-pointer-use policy and transforms 20 total memory objects: four globals and
-sixteen stack arrays. The fixture corpus intentionally includes unknown-width
-and escaped-pointer cases; these account for the three blocked candidates and
-four unknown-width classifications. The resulting static summed per-element
-width delta is 234 bits.
-
-Table~\ref{tab:benchmark-results} shows the current C-kernel benchmark snapshot.
-The suite includes unsigned mask extraction, pixel-channel packing, packet flag
-decoding, signed offsets, global constants, select-based ranges, and deliberate
-rejection cases. Across 32 kernels, the pass sees 39 memory-object
-candidates, classifies 36 as safe under the use policy, and transforms 26
-objects. The transformed C kernels increase static IR instruction count by 141
-assignments because the pass inserts explicit truncation and extension
-instructions; after LLVM default O2 this overhead falls to four assignments.
-Runtime differential tests compile baseline and transformed versions of all
-32 benchmark harnesses and compare deterministic checksum outputs. All
-32 currently match, providing a practical behavioral sanity check in
-addition to LLVM verifier checks. This does not replace formal proof or large
-input-space testing, but it strengthens the artifact-level evidence for the
-current benchmark suite.
-
-\section{Limitations}
-
-The current prototype is intentionally narrow. It does not handle arbitrary
-pointer aliasing, external globals, scalar allocas, bitcast/address-space-cast
-rewrite cases, aggregate loads, volatile or atomic semantics, interprocedural
-effects, or broad arithmetic range inference. The current evaluation uses small
-fixtures and kernels rather than external benchmark suites. Therefore the
-reported numbers establish correctness and reproducibility of the artifact, not
-general application-level memory or performance improvements.
+The implemented candidate set contains integer or nested-integer arrays created
+by \texttt{alloca}, plus integer or integer-array globals with internal or
+private linkage. Scalar allocas, externally visible globals, heap objects,
+structures, vector objects, and arbitrary aliases are outside the current
+scope. A recursive use walk recognizes GEP paths and direct loads/stores; a
+second rewriteability check ensures access types agree with the original element
+type before mutation.
 
 \section{Related Work}
 
-The implementation builds on LLVM's modular pass infrastructure
-\cite{lattner2004llvm} and uses LLVM IR semantics as the transformation target.
-Its inference style is related to classic data-flow and abstract-interpretation
-ideas \cite{cousot1977abstract}, and to compiler propagation analyses such as
-conditional constant propagation \cite{wegman1991sccp}. The use of LLVM
-KnownBits connects the prototype to existing value-tracking infrastructure.
-Unlike scalar-only simplifications, this work focuses specifically on narrowing
-memory object element types while preserving load/store behavior.
+\subsection{LLVM Static Analyses}
+
+LLVM provides reusable analyses rather than a single notion of ``the required
+width.'' KnownBits describes bit values known from local reasoning, while
+DemandedBits propagates which output bits matter to consumers. ConstantRange
+models value sets, including signed and unsigned interpretations, and
+ScalarEvolution specializes recurring expressions in loops. These analyses can
+support width reasoning, but none by itself authorizes changing a memory
+object's representation: pointer exposure, object linkage, access modes, and
+reconstruction semantics remain transformation-specific obligations. The
+present pass uses KnownBits and syntactic rules but keeps the memory-safety
+policy explicit.
+
+\subsection{Integer Range Analysis}
+
+Abstract interpretation supplies the broader framework for computing sound
+over-approximations of program states \citep{cousot1977abstract}. Sparse
+conditional constant propagation illustrates how executable paths and value
+information can be coupled in compiler dataflow analysis
+\citep{wegman1991sccp}. LLVM's ConstantRange and ScalarEvolution embody related
+range representations within production infrastructure. This prototype is much
+less general: it recognizes constants, casts, masks, OR, compatible selects and
+bounded PHIs, then falls back to KnownBits. That smaller domain simplifies the
+preservation argument but necessarily produces conservative false negatives.
+
+\subsection{Bit-Width and Data-Width Optimization}
+
+Bit-width analysis predates this artifact. Bitwise propagated width information
+through program dataflow and targeted sub-word and silicon-compilation settings
+\citep{stephenson2000bitwidth}. BitValue combined forward information about
+constant bits with backward information about unused bits
+\citep{budiu2000bitvalue}. MiniBit used affine arithmetic to optimize integer and
+fractional widths in fixed-point hardware designs
+\citep{lee2005minibit}. These systems establish that data-width optimization is
+a broad research area spanning software and hardware compilation. The current
+work neither claims to originate width inference nor attempts their global or
+hardware-oriented objectives.
+
+Recent work by \citet{heo2025bitlevel} studies bit-level compiler optimization
+for ultra-low-power embedded systems. The verified bibliographic record places
+the article in volume 168 of the \emph{Journal of Systems Architecture}, article
+103546. Their bit-usage-driven evaluation is important motivation for separating
+bit evidence from realized artifacts: SHA exhibits partial bit usage without a
+static instruction-count reduction; narrowing an isolated load can require
+extensions that erase a useful static effect; and ADPCM increases static
+instruction count despite a reported runtime improvement. Their method and
+target differ from ours, and the paper does not describe an explicit LLVM
+DataLayout complete-object allocation check as an acceptance condition. These
+observations motivate our question---whether an unused-bit opportunity
+necessarily yields target-derived allocation benefit---but do not imply that
+their technique is incorrect or unsafe.
+
+\subsection{Memory-Oriented Transformations}
+
+LLVM transformations such as mem2reg and scalar replacement of aggregates
+reshape memory accesses to enable scalar optimization \citep{llvmSROA}. In
+contrast, this pass preserves admitted memory operations while changing the
+integer element type and inserting boundary casts. Translation-validation work
+such as Alive2 shows the value of mechanically checking LLVM transformations
+\citep{lopes2021alive2}; this artifact does not provide such a proof. It combines
+a restricted static argument, LLVM verification, and executable differential
+tests.
+
+\subsection{Research Gap}
+
+Prior work individually covers bit-value inference, range analysis, hardware
+width selection, scalar simplification, memory promotion, and translation
+validation. The narrower gap addressed here is an explicit bridge between two
+questions at the LLVM memory-object boundary: (i) is a representation change
+semantically safe under conservative pointer, value, and extension-family
+rules; and (ii) does the complete rewritten type occupy fewer bytes under the
+active target DataLayout? Our controlled experiment makes the second question
+an acceptance predicate and reports neutral opportunities instead of assuming
+that narrower IR implies useful allocation. The contribution is this scoped,
+inspectable combination and its reproducible evaluation, not a claim that its
+ingredients are individually unprecedented or that it dominates prior work.
+
+\begin{table*}[t]
+\centering
+\caption{Positioning against representative related work and LLVM infrastructure. A check mark denotes an explicit primary focus, not general superiority.}
+\label{tab:related}
+\small
+\scriptsize
+\setlength{\tabcolsep}{3pt}
+\begin{tabularx}{\textwidth}{p{0.115\textwidth}p{0.125\textwidth}p{0.105\textwidth}p{0.17\textwidth}p{0.16\textwidth}X}
+\toprule
+Work & Bit/value inference & Arbitrary widths & Memory-object rewrite & Explicit rejection policy & Reproducible object metrics \\
+\midrule
+Bitwise \citep{stephenson2000bitwidth} & \checkmark & \checkmark & partial & -- & -- \\
+BitValue \citep{budiu2000bitvalue} & \checkmark & \checkmark & -- & -- & -- \\
+MiniBit \citep{lee2005minibit} & \checkmark & \checkmark & hardware signals & -- & -- \\
+Heo et al. \citep{heo2025bitlevel} & \checkmark & \checkmark & embedded scope & -- & reported program metrics \\
+LLVM analyses \citep{llvmKnownBits,llvmDemandedBits,llvmConstantRange} & \checkmark & \checkmark & -- & analysis uncertainty & -- \\
+This artifact & \checkmark & \checkmark & selected LLVM objects & safety + allocation & \checkmark \\
+\bottomrule
+\end{tabularx}
+\end{table*}
+
+\begin{table*}[t]
+\centering
+\caption{Supported and rejected transformation classes in the frozen MVP.}
+\label{tab:classes}
+\small
+\begin{tabular}{p{0.19\textwidth}p{0.34\textwidth}p{0.37\textwidth}}
+\toprule
+Class & Admitted & Rejected or outside scope \\
+\midrule
+Objects & Local integer arrays; internal/private integer globals & Scalar allocas; structures; heap objects; external globals; vectors \\
+Pointer uses & Recursive GEP; type-matching direct load/store & Escapes, calls, pointer stored as a value, unsupported users, rewrite-incompatible casts \\
+Values & Constants, trunc/zext/sext, constant masks, OR, compatible select/PHI, KnownBits fallback & Unknown arithmetic, mixed extension families, insufficient bit evidence \\
+Memory modes & Ordinary non-atomic loads and stores & Volatile or atomic memory operations \\
+Result & Arbitrary narrower LLVM integer element type & Original object retained with a logged reason \\
+\bottomrule
+\end{tabular}
+\end{table*}
+
+\section{Proposed Approach}
+
+\subsection{Formal Problem Model}
+
+Let an eligible object be
+\[
+O=\langle T,W,S,L,B,E,P\rangle,
+\]
+where $T$ is the supported object form, $W$ is its original integer element
+width, $S$ is the set of observed store values, $L$ is the set of observed load
+uses, $B$ summarizes inferred bit/value constraints, $E$ is the inferred
+extension family in $\{\mathsf{zero},\mathsf{sign},\mathsf{unknown}\}$, and $P$
+is the recursively observed pointer-use graph. The task is to find an inferred
+$w<W$ such that every admitted stored value is representable, pointer/address
+uses do not expose an unsafe representation change, signed or unsigned
+interpretation remains consistent, and each rewritten load reconstructs the
+original logical value. The implementation chooses the maximum required width
+reported across supported stores. It does not search for a globally optimal
+width across the module or target.
+
+\subsection{Candidate Identification}
+
+The module pass enumerates local-linkage integer globals and array allocas whose
+nested base element is an LLVM integer. Candidate status is deliberately
+syntactic and stable. Objects outside this set are ignored, not counted as
+rejections, because no transformation was attempted.
+
+\subsection{Width Inference}
+
+For each stored value, inference returns a pair $(b,e)$: required width $b$ and
+extension family $e$. Constants use active bits; \texttt{trunc} bounds the width;
+\texttt{zext} and \texttt{sext} select the reconstruction family; a constant AND
+mask bounds active high bits; OR takes the compatible maximum; select and PHI
+require compatible incoming families. KnownBits is used only when it proves at
+least one leading zero. Failure on any relevant store marks the candidate as
+insufficiently established.
+
+\subsection{Signedness and Extension Handling}
+
+LLVM integer types are signless, so signedness must be derived from operations.
+A value originating from \texttt{sext} is reconstructed with \texttt{sext}; a
+zero-family value is reconstructed with \texttt{zext}. When different stores or
+control-flow arms imply conflicting families, $E=\mathsf{unknown}$ and the
+object is not transformed. This policy is conservative: it can reject a program
+whose values happen to fit at runtime, but it avoids silently changing negative
+values into large positive values.
+
+\subsection{Safety Predicate}
+
+The implemented decision is summarized by
+\begin{align*}
+\mathsf{Safe}(O,w) ={}& \mathsf{EligibleObject}(O) \\
+&\land \mathsf{NoPointerEscape}(P) \\
+&\land \mathsf{SupportedUsers}(P) \\
+&\land \mathsf{ValueFits}(S,B,w) \\
+&\land \mathsf{ConsistentExtension}(S,E) \\
+&\land \mathsf{RewriteableAccesses}(P,W,w) \\
+&\land \mathsf{OrdinaryMemory}(P) \\
+&\land (w<W).
+\end{align*}
+\emph{EligibleObject} checks object form and linkage. \emph{NoPointerEscape}
+and \emph{SupportedUsers} recursively classify users and reject calls,
+pointer-as-value stores, and unknown consumers. \emph{ValueFits} requires every
+observed store to yield a successful width result. \emph{ConsistentExtension}
+requires one reconstruction family. \emph{RewriteableAccesses} checks the exact
+load/store element types and rejects unsupported cast paths before mutation.
+\emph{OrdinaryMemory} rejects volatile or atomic operations. The final inequality
+is described as a meaningful width reduction, not as a target-aware selection
+policy. If any term cannot be established, the implementation retains the
+original object and emits a reason.
+
+\subsection{Target-Aware Acceptance}
+
+Let $T_O$ be the complete original object type and $T'_O(w)$ its complete
+rewritten type, including every array extent. For the module DataLayout $DL$,
+define
+\begin{align}
+ A_0(O)&=\operatorname{allocSize}_{DL}(T_O),\\
+ A_1(O,w)&=\operatorname{allocSize}_{DL}(T'_O(w)),\\
+ \mathsf{Accept}_{B}(O,w)&=\mathsf{Safe}(O,w)\\
+ &\quad\land A_1(O,w)<A_0(O).
+\end{align}
+Method A applies only $\mathsf{Safe}$. Method B adds the strict allocation
+inequality after the same width has been inferred. If $A_1=A_0$, the candidate
+is retained and logged as \texttt{NO\_TARGET\_ALLOCATION\_BENEFIT}; an increase
+is likewise rejected. This check is not a general target cost model: it does
+not predict instructions, execution time, energy, cache behavior, or final
+stack-frame and linked-image placement.
+
+\subsection{Transformation}
+
+When the predicate holds, the pass constructs a replacement alloca or global
+whose nested integer element has width $w$. It rebuilds GEPs using the new source
+element type, inserts \texttt{trunc} at stores, creates $w$-bit loads, and inserts
+the selected extension back to width $W$. Old instructions are erased only after
+their uses have been replaced. LLVM's verifier runs on every transformed test
+artifact.
+
+\begin{figure*}[t]
+\centering
+\includegraphics[width=0.96\textwidth]{figures/pass_architecture.pdf}
+\caption{Target-aware pass pipeline. Safety failure and allocation neutrality
+follow distinct rejection branches; the guard does not alter width inference.}
+\label{fig:architecture}
+\end{figure*}
+
+\subsection{Correctness Argument}
+
+For a stored $W$-bit value $v$, the original path is
+$v\rightarrow\mathsf{mem}_W\rightarrow v$. The transformed path is
+\[
+v\xrightarrow{\mathsf{trunc}_w}\mathsf{mem}_w
+\xrightarrow{\mathsf{load}}v_w
+\xrightarrow{\mathsf{ext}_E}v'.
+\]
+The inference obligation for every admissible store is
+\[
+\mathsf{ext}^{W}_{E}(\mathsf{trunc}_{w}(v))=v.
+\]
+For the zero family this holds when all discarded high bits are zero. For the
+sign family it holds when discarded bits equal sign replication from bit
+$w-1$. Because the pointer predicate restricts the object to rewritten accesses,
+each admitted load receives the same reconstructed logical value as the original
+load. The argument applies only to the supported transformation class. It is not
+universal formal verification. Static checks establish the local premises;
+LLVM verification establishes structural IR validity; differential execution
+provides finite empirical validation on the benchmark inputs.
+
+\section{LLVM Implementation}
+
+\subsection{Pass Architecture}
+
+\textsc{AdaptiveWidthMemoryPass} is an LLVM 18 module-pass plugin registered
+with the New Pass Manager \citep{llvmNewPM}. Pipeline names expose full,
+log-only, alloca-only, global-only, and target-aware operation. The code separates discovery,
+pointer classification, value inference, a dry-run rewriteability check, and
+mutation. The experimental \texttt{adaptive-width-mem-target-aware} pipeline
+adds the DataLayout allocation guard immediately before mutation. This ordering
+prevents partially rewritten candidates and keeps Method A unchanged.
+
+\subsection{Supported Patterns}
+
+The inference implementation handles integer constants, truncation, zero- and
+sign-extension, constant AND masks, bitwise OR, compatible select arms,
+compatible bounded PHIs, and a KnownBits fallback. The element type is created
+with LLVM's general integer-type constructor, so widths such as \texttt{i5},
+\texttt{i6}, and \texttt{i7} are genuine IR types rather than paper notation.
+
+\subsection{Rejection Patterns}
+
+Unsupported pointer consumers, pointer escapes, incompatible access types,
+mixed extension families, unknown stored values, no width reduction, volatile
+or atomic operations, and externally initialized globals are not transformed.
+In Method B, a safe candidate with no smaller complete-object allocation is
+additionally rejected as \texttt{no-target-allocation-benefit}.
+The pass reports candidate, reason, width evidence, extension family, and
+aggregate counts. Conservative rejection is part of the method: uncertainty is
+not replaced by speculation.
+
+\subsection{LLVM Integration}
+
+The plugin is built with CMake and LLVM's pass-plugin facility
+\citep{lattner2004llvm}. Clang 18 produces
+IR; \texttt{opt-18} loads the shared object and invokes
+\texttt{adaptive-width-mem} (Method A) or
+\texttt{adaptive-width-mem-target-aware} (Method B); \texttt{-verify-each} and
+an explicit verifier pass guard generated IR. The evaluation applies
+\texttt{mem2reg} before the custom pass to remove irrelevant scalar spills from
+C-derived kernels.
+
+\begin{figure}[t]
+\centering
+\begin{minipage}{0.98\columnwidth}
+\begin{lstlisting}
+; before
+%arr = alloca [2 x i16]
+%m = and i16 %x, 31
+store i16 %m, ptr %slot
+%v = load i16, ptr %slot
+
+; after
+%arr.narrow = alloca [2 x i5]
+%m.narrow = trunc i16 %m to i5
+store i5 %m.narrow, ptr %slot.narrow
+%v.narrow = load i5, ptr %slot.narrow
+%v.wide = zext i5 %v.narrow to i16
+\end{lstlisting}
+\end{minipage}
+\caption{Actual rewrite pattern for a value masked by 31. Five bits are
+sufficient, and zero-extension reconstructs the original logical value.}
+\label{fig:rewrite}
+\end{figure}
+
+\section{Experimental Methodology}
+
+\subsection{Research Questions}
+
+RQ1 is answered by candidate, safe, rejected, and transformed counts. RQ2 uses
+individual original and narrowed widths from transformation logs. RQ3 compares
+Methods A and B using complete-object DataLayout allocation, allocation-benefit
+precision, raw and O2 IR assignments, and host executable file size in both the
+controlled and external evaluations. RQ4 uses deterministic output comparisons
+for both methods. No research question asks about speed because runtime
+performance is not measured.
+
+\subsection{Benchmark Suite}
+
+The suite contains \BenchmarkCount{} small C kernels grouped into image/pixel,
+packet/header, DSP/signal, embedded/state, signed-value, lookup/global,
+unsigned-range, and deliberate-rejection categories. The manifest records each
+kernel's category and intent. These are focused microbenchmarks intended to
+exercise analysis behavior, not a representative application benchmark suite.
+
+\input{tables/benchmark_categories}
+
+\subsection{Controlled A/B Evaluation}
+
+Method A is the frozen conservative pass. Method B uses the same LLVM version,
+\BenchmarkCount{} kernels, C-to-IR inputs, module DataLayout, O2 pipeline,
+runtime harness, and measurement scripts. Its only changed condition is
+$A_1(O,w)<A_0(O)$ after the existing analysis has found $w$ safe. Candidate
+identification, value inference, pointer rules, signedness, extension rules, and
+supported object classes are unchanged. This isolates the causal question:
+does the allocation guard remove neutral transformations without discarding an
+allocation-positive opportunity?
+
+\subsection{External MiBench Validation}
+
+To test whether the controlled selection effect occurs outside purpose-built
+kernels, we use the established MiBench collection
+\citep{guthaus2001mibench} through the official LLVM test-suite
+\citep{llvmTestSuite}, pinned at commit
+\texttt{4b2c892}; the complete hash is recorded with the generated evidence and
+reproducibility instructions. The experiment compiles
+\ExternalCompilationUnits{} unmodified C compilation units from
+\ExternalPrograms{} programs. It uses Clang/LLVM 18, the same x86-64 target and
+DataLayout, preprocessing, Method A and Method B pipelines, O2 pipeline,
+allocation measurement, verification, and differential method as the
+controlled evaluation. The test-suite training commands supply program inputs.
+MiBench remains a separate external-validation dataset; its candidates are not
+merged with the 39-candidate controlled table.
+
+\subsection{Environment}
+
+Experiments use LLVM and Clang 18 in Ubuntu under WSL on a Windows host. The
+benchmark modules target \texttt{x86\_64-pc-linux-gnu}; their embedded DataLayout
+is the source for all type-allocation measurements. CMake and Ninja build the
+pass plugin. The host-dependent executable-size results
+therefore characterize this toolchain and environment only. Process wall time
+includes launching one \texttt{opt-18} process per kernel and is retained as a
+coarse regression indicator, not end-to-end compile time.
+
+\subsection{Metrics}
+
+The authoritative comparison JSON is generated from each method's benchmark
+TSV, runtime TSV, individual pass logs, and final test status. It checks that
+safe plus blocked equals all candidates, that runtime pass plus fail equals all
+executed comparisons, and that transformed-object counts, allocation records,
+and width reductions agree with individual logs. The primary static-width
+metric is $\sum_{O}(W_O-w_O)$ over transformed objects; it does not multiply by
+array length and therefore is not a footprint estimate.
+
+The second level measures the target/layout-specific allocation size of every
+transformed object. For original type $T_O$ and rewritten type $T'_O$, the pass
+calls \texttt{DataLayout::getTypeAllocSize} and records
+\begin{align}
+ A_0(O)&=\operatorname{allocSize}_{DL}(T_O),\\
+ A_1(O)&=\operatorname{allocSize}_{DL}(T'_O).
+\end{align}
+For arrays, $T_O$ and $T'_O$ are the complete array types, so their extents are
+included. The byte reduction is $A_0-A_1$ and the aggregate percentage is
+$100\sum_O(A_0-A_1)/\sum_O A_0$. Allocation-benefit precision is the number of
+positive transformations divided by all accepted transformations. Percentages
+over each method's accepted set have different denominators, so each
+experiment's direct retention comparison applies both outcomes to Method A's
+common opportunity set.
+Allocation size includes DataLayout alignment rounding; emitted logs also
+retain original/transformed ABI alignment. This is not a universal
+physical-memory or peak-runtime-footprint measurement.
+
+\begin{figure}[t]
+\centering
+\setlength{\fboxsep}{5pt}
+\fbox{\parbox{0.84\columnwidth}{\centering\textbf{Level 1: IR representation}\\
+Declared per-element width reduction $W-w$}}
+\\[-1pt]{\Large$\Downarrow$}\\[-1pt]
+\fbox{\parbox{0.84\columnwidth}{\centering\textbf{Level 2: target allocation}\\
+DataLayout-derived complete-object byte reduction $A_0-A_1$}}
+\caption{The evaluation reports distinct representation and target-allocation
+levels; the arrow denotes the measurement sequence, not proportionality.}
+\label{fig:two-levels}
+\end{figure}
+
+\subsection{Differential Testing}
+
+For every kernel, the harness produces baseline and transformed LLVM IR,
+compiles both at O2, executes deterministic input loops, and compares checksum
+outputs. For MiBench, the harness analogously executes each packaged training
+command and compares its deterministic stdout. Differential agreement
+is finite evidence for those executions. It does not prove equivalence for all
+possible inputs, undefined behavior, targets, or LLVM versions.
+
+\subsection{Reproducibility}
+
+The repository documents configuration, build, both pass invocations, tests,
+benchmark metrics, differential execution, A/B reconciliation, figure/table
+generation, and LaTeX compilation. The controlled experiment uses Bash with
+\path{tools/target_allocation_experiment.sh}; the full tests use
+\path{tests/run_tests.sh}. External validation uses
+\path{tools/external_benchmark_experiment.sh}, and
+\path{tests/check_external_results.py} independently reconciles its JSON and
+TSV partitions. The paper uses \path{tools/build_paper.ps1}. Generated IR, logs,
+executables, TSVs, JSON, tables, figures, and the final PDF remain available for
+audit.
+
+\section{Results}
+
+\subsection{Transformation Coverage}
+
+Across \BenchmarkCount{} kernels, both methods encounter \CandidateGlobals{}
+candidate globals and \CandidateAllocas{} candidate allocas, for
+\CandidateTotal{} candidates. Both classify \SafeCandidates{} pointer/use
+graphs as safe and \BlockedCandidates{} as blocked. Method A accepts
+\ATransformed{} transformations. Method B accepts \BTransformed{} because the
+three safe but allocation-neutral opportunities fail only the new guard. Thus
+candidate discovery and safety classification are identical, as required by
+the controlled design.
+
+\subsection{Width Reduction}
+
+For Method A, the sum of declared per-element reductions is
+\ADeclaredBits{} bits across accepted objects; the mean is
+\StaticReductionMean{} bits and the median is \StaticReductionMedian{} bits per
+object. Method B retains \BDeclaredBits{} bits and excludes 19 bits belonging to
+the neutral \texttt{i16}$\rightarrow$\texttt{i9}/\texttt{i10} cases. These
+statistics describe LLVM type-width changes, not packed runtime layout, cache
+benefits, or whole-program memory reduction.
+
+\input{tables/width_stats}
+\input{tables/width_transitions}
+
+\input{tables/ab_comparison}
+
+\subsection{DataLayout-Derived Allocation Effects}
+
+Method A accepts \APositive{} allocation-positive, \AZero{} neutral, and
+\ANegative{} negative objects. The neutral cases are one DSP object
+(\texttt{[4 x i16]}$\rightarrow$\texttt{[4 x i10]}) and two embedded-state
+objects (\texttt{[2 x i16]}$\rightarrow$\texttt{[2 x i9]/[2 x i10]}). Their
+byte-granular x86-64 DataLayout allocations remain 8, 4, and 4 bytes,
+respectively. This directly answers the narrower research problem: safe static
+width evidence does not necessarily yield a smaller target-derived allocation.
+
+\subsection{Allocation-Benefit Precision}
+
+Method A's allocation-benefit precision is $23/26=\APrecision\%$. Method B
+rejects exactly the three neutral cases, so its precision is
+$23/23=\BPrecision\%$; no negative case is accepted by either method. The
+strongest measured selection improvement is therefore \APrecision\% to
+\BPrecision\%, not an increase in absolute bytes saved.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\columnwidth]{figures/ab_selection.pdf}
+\caption{Accepted, allocation-beneficial, and neutral transformations. Method B
+removes only the three neutral decisions.}
+\label{fig:ab-selection}
+\end{figure}
+
+\subsection{Common Opportunity-Set Analysis}
+
+Percentages over each method's accepted objects use different denominators:
+Method A reports \APrecision\% precision over 26 objects, whereas Method B
+reports \BPrecision\% over 23. For an equal-denominator comparison, applying
+both outcomes to Method A's common 26-object opportunity set gives
+\CommonBaselineBytes{} to \CommonResultBytes{} bytes,
+\CommonSavedBytes{} bytes saved, or \CommonReductionPercent\%, for both methods.
+The guard therefore retains every observed allocation saving but does not
+increase it; its improvement is the exclusion of transformations that contribute
+zero bytes.
+
+\subsection{Category Results}
+
+DSP acceptance falls from 3 to 2 objects and its allocation-benefit precision
+rises from 66.67\% to 100\%. Embedded-state acceptance falls from 5 to 3 and
+precision rises from 60.00\% to 100\%. All other transformed categories were
+already allocation-positive and are unchanged. These focused kernels expose
+the mechanism but do not establish category prevalence in general programs.
+
+\input{tables/ab_categories}
+
+\subsection{IR Effects}
+
+The explicit truncation and reconstruction operations increase Method A's raw
+IR assignment count by \ARawIR{} and Method B's by \BRawIR{}. The guard avoids
+\RawIRAvoided{} raw assignments associated with the neutral rewrites. After
+LLVM's default O2 pipeline, both summed deltas are \BOtwoIR{}. The guard thus
+reduces raw transformation overhead without changing the measured O2 delta;
+these counts are neither target-instruction nor runtime-speed measurements.
+
+\subsection{Generated Artifact Effects}
+
+Both methods have a summed host executable-file delta of
+\BExecutableDelta{} bytes. This is distinct from DataLayout object allocation
+and is a toolchain-specific file-size result, not a general code-size result.
+End-to-end compilation time and runtime speed were not measured.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\columnwidth]{figures/ab_ir_effects.pdf}
+\caption{Raw and O2 IR assignment deltas for the controlled methods.}
+\label{fig:ab-ir}
+\end{figure}
+
+\subsection{Runtime Correctness}
+
+Each method executes \RuntimeTotal{} baseline/transformed pairs.
+\RuntimePassed{} comparisons pass and \RuntimeFailed{} fail for A, and the same
+\RuntimePassed{}/\RuntimeTotal{} agreement holds for B. LLVM verifier checks
+also pass for both. This answers RQ4 only for the tested inputs; empirical
+agreement does not prove all-input equivalence.
+
+\subsection{Rejection Behavior}
+
+Rejected examples include pointer escapes and volatile memory. Other objects
+remain unchanged because width or extension-family evidence is insufficient or
+$w\geq W$. Method B adds three
+\texttt{NO\_TARGET\_ALLOCATION\_BENEFIT} decisions. This reason is separate
+from safety failure: the three objects satisfy \textsf{Safe} but fail the strict
+DataLayout inequality.
+
+\subsection{External Validation on MiBench}
+
+All \ExternalPrograms{} attempted MiBench programs compile, comprising
+\ExternalCompilationUnits{} unmodified C compilation units. The pass encounters
+\ExternalCandidates{} candidate memory objects: \ExternalSafe{} are
+safety-safe and \ExternalBlocked{} are blocked. Candidate enumeration is broad
+and includes internal integer arrays such as strings that are then
+conservatively rejected; transformation counts must therefore not be confused
+with program counts. Method A transforms \ExternalATransformed{} objects:
+\ExternalAPositive{} have positive DataLayout allocation reduction,
+\ExternalAZero{} are neutral, and none is negative. Method B transforms
+\ExternalBTransformed{} objects, all \ExternalBPositive{} positive, raising
+allocation-benefit precision from \ExternalAPrecision\% to
+\ExternalBPrecision\%.
+
+On Method A's common \ExternalATransformed{}-object opportunity set, both
+methods produce \ExternalCommonBaseline{} to \ExternalCommonResult{} bytes,
+saving \ExternalCommonSaved{} bytes (\ExternalCommonPercent\%). Method B's
+\ExternalAcceptedBPercent\% accepted-set reduction
+(\ExternalAcceptedBBaseline{} to \ExternalAcceptedBResult{} bytes) has a
+different, 40-object denominator and is not evidence of greater absolute
+saving. The guard removes exactly two neutral transformations and no positive
+one.
+
+\input{tables/external_mibench}
+
+The external IR results differ from the controlled pattern. Raw assignment
+growth is \ExternalARawIR{} for A and \ExternalBRawIR{} for B. After O2 it is
+\ExternalAOtwoIR{} and \ExternalBOtwoIR{}, respectively: a reduction of
+\ExternalOtwoAvoided{} assignments, or approximately
+\ExternalOtwoAvoidedPercent\% relative to A's O2 delta. This shows that the
+guard can influence downstream optimized IR on realistic workloads, but does
+not establish a runtime benefit. Executable sizes increase slightly under both
+methods (\ExternalAExecutableDelta{} B for A and
+\ExternalBExecutableDelta{} B for B); therefore, this experiment establishes
+no executable/code-size benefit.
+
+For both methods, \ExternalDiffPassed{} executed comparisons pass,
+\ExternalDiffFailed{} fail, and \ExternalDiffSkipped{} is skipped.
+\texttt{office-ispell} exits with \texttt{Illegal format hash table} for both
+the rebuilt baseline and the original packaged test-suite executable, so no
+baseline/transformed comparison is meaningful for that command. It remains a
+reported harness/data compatibility skip, not a transformation failure.
+
+\section{Discussion}
+
+The controlled evaluation yields eight bounded findings. First, a safe
+representation change does not necessarily imply target allocation benefit.
+Second, Method A contains three such neutral decisions. Third, Method B removes
+all three without modifying safety inference. Fourth, allocation-benefit
+precision rises from \APrecision\% to \BPrecision\%. Fifth, all
+\CommonSavedBytes{} bytes of aggregate common-set saving are retained; the
+saving does not increase. Sixth, raw IR overhead falls from \ARawIR{} to
+\BRawIR{}, avoiding \RawIRAvoided{} assignments, while the O2 delta remains
+\BOtwoIR{}. Seventh, both methods preserve \RuntimePassed{}/\RuntimeTotal{}
+differential agreement. Eighth, allocation findings are specific to the
+evaluated x86-64 LLVM DataLayout.
+
+The external evaluation strengthens only the scope of this selection result.
+MiBench independently contains two safe but allocation-neutral Method A
+rewrites, and Method B removes both while retaining every positive common-set
+opportunity. The effect also persists farther through optimization on this
+dataset: the O2 assignment delta changes from \ExternalAOtwoIR{} to
+\ExternalBOtwoIR{}, whereas both controlled deltas are \AOtwoIR{}. This
+workload-dependent contrast is an observation about optimized IR structure, not
+proof of faster execution. Likewise, B's executable increase is slightly
+smaller than A's (\ExternalBExecutableDelta{} B versus
+\ExternalAExecutableDelta{} B), but both deltas are positive and provide no
+code-size benefit.
+
+The contribution is a target-aware acceptance mechanism that connects
+conservative LLVM memory-object width narrowing with DataLayout allocation
+validation, together with empirical evidence that the distinction eliminates
+allocation-neutral transformations in this suite. It improves transformation
+selection, not semantic safety, absolute allocation saving, or runtime
+performance. The results do not show that arbitrary-width memory is always
+densely laid out, that final stack frames or linked images realize the same
+saving, or that this method dominates prior bit-level optimization.
+
+\section{Limitations and Threats to Validity}
+
+\textbf{Benchmark representativeness.} The 32 kernels are purpose-built
+microbenchmarks. External coverage adds only \ExternalPrograms{} MiBench
+programs and \ExternalCompilationUnits{} C compilation units, not all versions
+of MiBench or all real-world software. Transformations occur in only six of the
+17 programs, so the experiment does not establish broad prevalence.
+
+\textbf{Supported object forms.} Heap allocations, structures, scalar allocas,
+vectors, externally visible objects, arbitrary aliases, interprocedural pointer
+flows, and several cast patterns are unsupported. Conservative false negatives
+are expected whenever the local analysis cannot establish a width or common
+extension family.
+
+\textbf{LLVM and target dependence.} The implementation and commands target
+LLVM 18. IR legality does not guarantee identical transformation behavior across
+LLVM versions. Arbitrary IR widths may be legalized, padded, scalarized, or
+widened differently by target backends. The reported allocation result is for
+the x86-64 module DataLayout only.
+
+\textbf{Representation versus allocation.} Level 1 sums declared element-width
+differences. Level 2 applies the evaluated module's DataLayout to complete object
+types and therefore captures target type-allocation rounding, including
+three zero-reduction Method A objects. It still does not measure final stack-frame layout,
+linked-image placement, allocator metadata, live-set size, cache behavior, or
+peak physical memory. Other targets and ABI layouts may differ.
+
+\textbf{Dynamic validity.} Differential tests use deterministic input loops and
+checksum outputs. They do not cover all input values, undefined behavior, data
+races, volatile/atomic semantics, concurrency, or other targets. The pass now
+rejects volatile and atomic accesses because their semantics are outside the
+rewrite model.
+
+\textbf{Performance evidence.} Raw/O2 IR counts and executable file sizes are
+not runtime measures. Process wall time is noisy and includes tool startup. No
+runtime-performance or energy measurement was performed. MiBench executable sizes increase
+by \ExternalAExecutableDelta{} B and \ExternalBExecutableDelta{} B; no runtime,
+energy, code-size, or compile-time improvement is claimed.
+
+\textbf{External candidate rejection.} Of \ExternalCandidates{} MiBench
+candidates, \ExternalBlocked{} are blocked by the conservative safety policy,
+and only \ExternalATransformed{} are transformed by Method A. This high
+rejection rate and concentration of transformations indicate expected false
+negatives and narrow supported object forms rather than general applicability.
+
+\textbf{Correctness assurance.} The preservation argument is conditional on the
+implemented predicates; LLVM verification checks structural validity; runtime
+tests provide finite evidence. There is no mechanized proof or translation
+validation of every rewrite.
+
+\textbf{Prior-work comparison.} This evaluation does not reproduce Heo et
+al.'s instruction-level method, AVR target, or exact MiBench configuration. It therefore
+supports no direct performance or superiority comparison. The cited mixed
+effects motivate the general question only; our three neutral memory objects
+are not attributed to their implementation.
 
 \section{Future Work}
 
-Future work should scale the metrics harness to larger benchmark suites,
-measure optimized machine-code effects after downstream LLVM passes, support
-additional safe pointer-use patterns, extend arithmetic range inference, and add
-runtime differential testing for transformed kernels. Another important
-direction is comparing memory-object narrowing against scalar bit-width
-optimizations to determine when memory rewriting provides unique benefits.
+Future work can broaden memory-object forms to structures and heap allocations,
+introduce alias-aware and interprocedural reasoning, enrich range inference with
+ConstantRange or ScalarEvolution, and extend target-aware selection beyond the
+single allocation-size predicate without conflating it with safety. Evaluation should add broader external suites, randomized and
+property-based differential workloads, multiple LLVM releases and targets,
+machine-code analysis, measured allocation layouts, embedded hardware energy
+experiments, and independent translation validation. These are extensions to
+the frozen baseline, not features claimed by the current artifact.
 
 \section{Conclusion}
 
-This draft presented a conservative LLVM prototype for adaptive bit-width
-narrowing of selected memory objects. The pass combines local stored-value
-inference, explicit signedness restoration, conservative pointer-use filtering,
-and deterministic reporting. The current results show that the implementation
-can safely transform targeted fixture and C-derived kernels while preserving a
-clear rejection policy. The artifact is now positioned for broader benchmark
-evaluation and iterative paper development.
+The evaluation shows that static width/value evidence and target allocation
+benefit are distinct. In the controlled experiment, the DataLayout guard
+reduces 26 accepted transformations to 23, eliminates all three neutral cases,
+raises allocation-benefit precision from 88.46\% to 100\%, and retains all 67 B
+of common-set saving with 32/32 differential agreement. External validation on
+\ExternalPrograms{} MiBench programs repeats the selection result: precision
+rises from \ExternalAPrecision\% to \ExternalBPrecision\%, both neutral rewrites
+are removed, all \ExternalCommonSaved{} B of common-set saving are retained,
+and all \ExternalDiffPassed{} executed comparisons agree. MiBench additionally
+shows an O2 IR delta change from \ExternalAOtwoIR{} to \ExternalBOtwoIR{}, but
+executable sizes still increase slightly under both methods. The contribution
+is therefore improved transformation-selection precision and target-aware
+allocation reasoning, not demonstrated runtime, energy, physical-memory, or
+code-size improvement.
 
-\bibliographystyle{plain}
+\balance
+\bibliographystyle{plainnat}
 \bibliography{references}
 
 \end{document}

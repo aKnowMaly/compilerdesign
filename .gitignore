@@ -1,2 +1,14 @@
-build/
+build/*
+!build/external-benchmark-validation/
+build/external-benchmark-validation/*
+!build/external-benchmark-validation/summary.md
+!build/external-benchmark-validation/results.json
+!build/external-benchmark-validation/programs.tsv
+!build/external-benchmark-validation/candidates.tsv
+!build/external-benchmark-validation/rejection-reasons.tsv
 tmp/
+tools/tectonic/
+__pycache__/
+*.py[cod]
+output/pdf/*.log
+output/pdf/*.blg
