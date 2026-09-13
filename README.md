@@ -100,8 +100,10 @@ LLVM test-suite commit `4b2c892865cbbb05ee996c88794a58e17d3adb81`, uses the
 suite's unmodified C sources and packaged training commands, and keeps these
 results separate from the primary controlled 32-kernel experiment. The 17
 programs comprise 211 unmodified MiBench C compilation units. The generated
-`compile_commands.json` also contains `fpcmp.c` and `timeit.c`, two LLVM
-test-suite support tools; they are excluded from the MiBench unit count.
+`compile_commands.json` has 214 entries in total. Its 213 C entries comprise
+the 211 MiBench units plus `fpcmp.c` and `timeit.c`, two LLVM test-suite support
+tools; the remaining entry builds `not.cpp`. All three support-tool entries are
+excluded from the MiBench unit count.
 
 Additional WSL dependencies are Git and network access for the first source
 fetch. The normal LLVM 18, CMake, Ninja, Bash, and Python 3 dependencies listed

@@ -48,16 +48,23 @@
 \setlength{\floatsep}{5pt plus 2pt minus 2pt}
 \setlength{\intextsep}{5pt plus 2pt minus 2pt}
 \setlength{\bibsep}{0.5pt}
-\renewcommand{\bibfont}{\scriptsize}
+\renewcommand{\bibfont}{\fontsize{7.5pt}{8.2pt}\selectfont}
 \Urlmuskip=0mu plus 1mu
 
 \title{\vspace{-0.55in}\bfseries Target-Aware Conservative Width Narrowing\\of LLVM Memory Objects}
-\author{\textbf{SheeshBakht}\\[-1pt]
-  \normalsize\texttt{pandeyakshat466@gmail.com}}
+\author{\textbf{Mitul Swaroop}\\[-1pt]
+  \normalsize\texttt{mitulswaroop@gmail.com}
+  \and
+  \textbf{Tanishq Tamkoria}\\[-1pt]
+  \normalsize\texttt{[PLACEHOLDER EMAIL]}
+  \and
+  \textbf{Aryan Mittal}\\[-1pt]
+  \normalsize\texttt{[PLACEHOLDER EMAIL]}}
 \date{}
 
 \begin{document}
 \maketitle
+\nocite{heo2025bitlevel,mahlke2001bitwidth,nandivada2013packing,bhaskaracharya2016storage,lee2006accuracy,jain2019executable,cherubin2020survey,jantz2014phase,zhou2021bugs,evenmendoza2022csmith}
 \vspace{-0.35in}
 
 \begin{abstract}
@@ -228,6 +235,12 @@ a broad research area spanning software and hardware compilation. The current
 work neither claims to originate width inference nor attempts their global or
 hardware-oriented objectives.
 
+Journal studies additionally cover bitwidth-aware accelerator synthesis,
+variable packing, and accuracy-guaranteed fixed-point width selection
+\citep{mahlke2001bitwidth,nandivada2013packing,lee2006accuracy}; a broader survey
+catalogues reduced-precision tools and their remaining automation challenges
+\citep{cherubin2020survey}.
+
 Recent work by \citet{heo2025bitlevel} studies bit-level compiler optimization
 for ultra-low-power embedded systems. The verified bibliographic record places
 the article in volume 168 of the \emph{Journal of Systems Architecture}, article
@@ -252,6 +265,12 @@ such as Alive2 shows the value of mechanically checking LLVM transformations
 \citep{lopes2021alive2}; this artifact does not provide such a proof. It combines
 a restricted static argument, LLVM verification, and executable differential
 tests.
+
+Automatic array-storage optimization provides complementary layout-based storage
+reduction \citep{bhaskaracharya2016storage}, while studies of phase ordering, LLVM
+executable size, optimization bugs, and CsmithEdge motivate conservative,
+artifact-aware, and differential validation
+\citep{jantz2014phase,jain2019executable,zhou2021bugs,evenmendoza2022csmith}.
 
 \subsection{Research Gap}
 
@@ -617,9 +636,12 @@ generation, and LaTeX compilation. The controlled experiment uses Bash with
 \path{tests/run_tests.sh}. External validation uses
 \path{tools/external_benchmark_experiment.sh}, and
 \path{tests/check_external_results.py} independently reconciles its JSON and
-TSV partitions. The paper uses \path{tools/build_paper.ps1}. Generated IR, logs,
-executables, TSVs, JSON, tables, figures, and the final PDF remain available for
-audit.
+TSV partitions. Of 214 entries in the generated compilation database, 213
+compile C files: 211 MiBench units plus the test-suite support tools
+\texttt{fpcmp.c} and \texttt{timeit.c}; the remaining support entry builds
+\texttt{not.cpp}. Support tools are excluded from the MiBench unit count. The
+paper uses \path{tools/build_paper.ps1}. Generated IR, logs, executables, TSVs,
+JSON, tables, figures, and the final PDF remain available for audit.
 
 \section{Results}
 
@@ -816,6 +838,17 @@ performance. The results do not show that arbitrary-width memory is always
 densely laid out, that final stack frames or linked images realize the same
 saving, or that this method dominates prior bit-level optimization.
 
+An exploratory investigation on a separate experimental branch examined
+allocation-equivalent safe widths after Method B. Across 23 accepted objects,
+one controlled kernel benefited from an additional semantic bit: both
+\texttt{i7} and \texttt{i8} enabled downstream simplification and reduced the
+measured instruction count, whereas other choices introduced target-dependent
+regressions through SLP vectorization or backend instruction selection. Thus
+unchanged DataLayout allocation does not imply identical downstream behavior,
+but these sparse mixed outcomes do not establish a reliable general width
+selector. They motivate broader independent validation and richer
+optimization-aware modeling rather than a new principal contribution here.
+
 \section{Limitations and Threats to Validity}
 
 \textbf{Benchmark representativeness.} The 32 kernels are purpose-built
@@ -866,6 +899,12 @@ implemented predicates; LLVM verification checks structural validity; runtime
 tests provide finite evidence. There is no mechanized proof or translation
 validation of every rewrite.
 
+\textbf{Exploratory width selection.} The separate allocation-equivalent-width
+study does not provide a dependable general selector. Its positive result is
+concentrated in one controlled kernel, while other choices are neutral or
+target-dependently regressive. Method C therefore remains exploratory future
+work and is not part of the validated Method A/B contribution.
+
 \textbf{Prior-work comparison.} This evaluation does not reproduce Heo et
 al.'s instruction-level method, AVR target, or exact MiBench configuration. It therefore
 supports no direct performance or superiority comparison. The cited mixed
@@ -875,13 +914,18 @@ are not attributed to their implementation.
 \section{Future Work}
 
 Future work can broaden memory-object forms to structures and heap allocations,
-introduce alias-aware and interprocedural reasoning, enrich range inference with
-ConstantRange or ScalarEvolution, and extend target-aware selection beyond the
-single allocation-size predicate without conflating it with safety. Evaluation should add broader external suites, randomized and
-property-based differential workloads, multiple LLVM releases and targets,
-machine-code analysis, measured allocation layouts, embedded hardware energy
-experiments, and independent translation validation. These are extensions to
-the frozen baseline, not features claimed by the current artifact.
+introduce alias-aware and interprocedural reasoning, and enrich range inference
+with ConstantRange or ScalarEvolution. The completed exploratory investigation
+of allocation-equivalent safe widths showed that downstream LLVM optimization
+can favor different representations even when target allocation is unchanged.
+Future selection research should therefore model vectorization profitability,
+extraction and extension costs, control-flow structure, register pressure, and
+target-specific lowering effects, followed by independent validation across
+broader benchmark suites, LLVM releases, and target architectures. Additional
+evaluation can include randomized and property-based differential workloads,
+measured allocation layouts, embedded hardware energy experiments, and
+independent translation validation. These are extensions to the frozen
+baseline, not features claimed by the current artifact.
 
 \section{Conclusion}
 
@@ -901,7 +945,7 @@ allocation reasoning, not demonstrated runtime, energy, physical-memory, or
 code-size improvement.
 
 \balance
-\bibliographystyle{plainnat}
+\bibliographystyle{unsrtnat}
 \bibliography{references}
 
 \end{document}
