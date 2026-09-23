@@ -98,8 +98,9 @@ established MiBench integration in the
 [official LLVM test-suite](https://github.com/llvm/llvm-test-suite). It pins
 LLVM test-suite commit `4b2c892865cbbb05ee996c88794a58e17d3adb81`, uses the
 suite's unmodified C sources and packaged training commands, and keeps these
-results separate from the primary controlled 32-kernel experiment. The 17
-programs comprise 211 unmodified MiBench C compilation units. The generated
+results separate from the primary controlled 32-kernel experiment. The
+external validation covers 17 MiBench programs comprising 211 unmodified C
+compilation units. The generated
 `compile_commands.json` has 214 entries in total. Its 213 C entries comprise
 the 211 MiBench units plus `fpcmp.c` and `timeit.c`, two LLVM test-suite support
 tools; the remaining entry builds `not.cpp`. All three support-tool entries are

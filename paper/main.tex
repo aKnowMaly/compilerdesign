@@ -558,11 +558,11 @@ kernels, we use the established MiBench collection
 \citep{guthaus2001mibench} through the official LLVM test-suite
 \citep{llvmTestSuite}, pinned at commit
 \texttt{4b2c892}; the complete hash is recorded with the generated evidence and
-reproducibility instructions. The experiment compiles
-\ExternalCompilationUnits{} unmodified C compilation units from
-\ExternalPrograms{} programs. It uses Clang/LLVM 18, the same x86-64 target and
-DataLayout, preprocessing, Method A and Method B pipelines, O2 pipeline,
-allocation measurement, verification, and differential method as the
+reproducibility instructions. The experiment covers
+\ExternalPrograms{} MiBench programs comprising
+\ExternalCompilationUnits{} unmodified C compilation units. It uses Clang/LLVM 18,
+the same x86-64 target and DataLayout, preprocessing, Method A and Method B
+pipelines, O2 pipeline, allocation measurement, verification, and differential method as the
 controlled evaluation. The test-suite training commands supply program inputs.
 MiBench remains a separate external-validation dataset; its candidates are not
 merged with the 39-candidate controlled table.
@@ -761,8 +761,9 @@ DataLayout inequality.
 
 \subsection{External Validation on MiBench}
 
-All \ExternalPrograms{} attempted MiBench programs compile, comprising
-\ExternalCompilationUnits{} unmodified C compilation units. The pass encounters
+The evaluation covers \ExternalPrograms{} MiBench programs comprising
+\ExternalCompilationUnits{} unmodified C compilation units; all attempted
+programs compile. The pass encounters
 \ExternalCandidates{} candidate memory objects: \ExternalSafe{} are
 safety-safe and \ExternalBlocked{} are blocked. Candidate enumeration is broad
 and includes internal integer arrays such as strings that are then
@@ -853,9 +854,10 @@ optimization-aware modeling rather than a new principal contribution here.
 
 \textbf{Benchmark representativeness.} The 32 kernels are purpose-built
 microbenchmarks. External coverage adds only \ExternalPrograms{} MiBench
-programs and \ExternalCompilationUnits{} C compilation units, not all versions
-of MiBench or all real-world software. Transformations occur in only six of the
-17 programs, so the experiment does not establish broad prevalence.
+programs comprising \ExternalCompilationUnits{} unmodified C compilation
+units, not all versions of MiBench or all real-world software. Transformations
+occur in only six of the 17 programs, so the experiment does not establish broad
+prevalence.
 
 \textbf{Supported object forms.} Heap allocations, structures, scalar allocas,
 vectors, externally visible objects, arbitrary aliases, interprocedural pointer

@@ -12,3 +12,9 @@ __pycache__/
 *.py[cod]
 output/pdf/*.log
 output/pdf/*.blg
+.codex-finalizer/
+review1_build/node_modules/
+review1_build/compact_renders/
+review1_build/renders/
+review1_build/renders_v2/
+review1_build/review_renders/
