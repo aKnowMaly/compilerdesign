@@ -1,0 +1,6 @@
+[adaptive-width-mem] module=/mnt/c/Users/admin/Documents/ChatGPT/compilerdesign/build/runtime-differential/ir/signed_delta_pair.ll mode=adaptive-width-mem
+[adaptive-width-mem] candidate global name=.str linkage=private type=[6 x i8] safety=blocked reason=unsupported-user supported-uses=0 unsupported-uses=1 width=blocked
+[adaptive-width-mem] reject candidate=.str reason=unsupported-user user=call function=main
+[adaptive-width-mem] candidate alloca function=signed_delta_pair name= type=[2 x i16] safety=safe reason=supported-uses-only supported-uses=8 unsupported-uses=0 original-bits=16 proposed-bits=8 width-reason=inferred-stored-values extend=sext loads=2 stores=2
+[adaptive-width-mem] transform alloca name=.narrow original-bits=16 narrowed-bits=8 original-type="[2 x i16]" transformed-type="[2 x i8]" original-alloc-bytes=4 transformed-alloc-bytes=2 original-abi-align=2 transformed-abi-align=1
+[adaptive-width-mem] summary candidate-globals=1 candidate-allocas=1 safe=1 blocked=1 unknown-width=0 no-meaningful-reduction=0 rewrite-blocked=0 transformed-globals=0 transformed-allocas=1 loads-rewritten=2 stores-rewritten=2 bits-saved-per-element=8 no-target-allocation-benefit=0

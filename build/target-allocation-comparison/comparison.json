@@ -1,0 +1,119 @@
+{
+  "schema_version": 1,
+  "baseline_a": {
+    "method": "A_current_conservative",
+    "candidates": 39,
+    "transformed": 26,
+    "positive": 23,
+    "zero": 3,
+    "negative": 0,
+    "accepted_baseline_bytes": 150,
+    "accepted_transformed_bytes": 83,
+    "accepted_saved_bytes": 67,
+    "accepted_reduction_percent": 44.67,
+    "benefit_precision_percent": 88.46,
+    "declared_width_reduction_bits": 271,
+    "differential_passed": 32,
+    "differential_failed": 0,
+    "raw_ir_delta": 141,
+    "o2_ir_delta": 4,
+    "executable_size_delta_bytes": 0
+  },
+  "experiment_b": {
+    "method": "B_target_allocation_guard",
+    "candidates": 39,
+    "transformed": 23,
+    "positive": 23,
+    "zero": 0,
+    "negative": 0,
+    "accepted_baseline_bytes": 134,
+    "accepted_transformed_bytes": 67,
+    "accepted_saved_bytes": 67,
+    "accepted_reduction_percent": 50.0,
+    "benefit_precision_percent": 100.0,
+    "declared_width_reduction_bits": 252,
+    "differential_passed": 32,
+    "differential_failed": 0,
+    "raw_ir_delta": 125,
+    "o2_ir_delta": 4,
+    "executable_size_delta_bytes": 0
+  },
+  "common_26_object_opportunity_set": {
+    "baseline_bytes": 150,
+    "baseline_a_result_bytes": 83,
+    "experiment_b_result_bytes": 83,
+    "saved_bytes_both_methods": 67,
+    "reduction_percent_both_methods": 44.67
+  },
+  "guard_rejected_objects": [
+    {
+      "benchmark": "moving_average4",
+      "category": "dsp_signal",
+      "object_kind": "alloca",
+      "object_name": ".narrow",
+      "original_type": "[4 x i16]",
+      "transformed_type": "[4 x i10]",
+      "original_bits": "16",
+      "transformed_bits": "10",
+      "declared_width_reduction_bits": "6",
+      "baseline_allocation_bytes": "8",
+      "transformed_allocation_bytes": "8",
+      "allocation_reduction_bytes": "0",
+      "allocation_reduction_percent": "0.0",
+      "original_abi_alignment_bytes": "2",
+      "transformed_abi_alignment_bytes": "2"
+    },
+    {
+      "benchmark": "saturating_sensor",
+      "category": "embedded_state",
+      "object_kind": "alloca",
+      "object_name": ".narrow",
+      "original_type": "[2 x i16]",
+      "transformed_type": "[2 x i9]",
+      "original_bits": "16",
+      "transformed_bits": "9",
+      "declared_width_reduction_bits": "7",
+      "baseline_allocation_bytes": "4",
+      "transformed_allocation_bytes": "4",
+      "allocation_reduction_bytes": "0",
+      "allocation_reduction_percent": "0.0",
+      "original_abi_alignment_bytes": "2",
+      "transformed_abi_alignment_bytes": "2"
+    },
+    {
+      "benchmark": "sensor_bucket",
+      "category": "embedded_state",
+      "object_kind": "alloca",
+      "object_name": ".narrow",
+      "original_type": "[2 x i16]",
+      "transformed_type": "[2 x i10]",
+      "original_bits": "16",
+      "transformed_bits": "10",
+      "declared_width_reduction_bits": "6",
+      "baseline_allocation_bytes": "4",
+      "transformed_allocation_bytes": "4",
+      "allocation_reduction_bytes": "0",
+      "allocation_reduction_percent": "0.0",
+      "original_abi_alignment_bytes": "2",
+      "transformed_abi_alignment_bytes": "2"
+    }
+  ],
+  "baseline_a_rejection_reasons": {
+    "unsupported-user": 3,
+    "volatile-or-atomic-memory": 1,
+    "unknown-stored-value": 5,
+    "no-meaningful-width-reduction": 4
+  },
+  "experiment_b_rejection_reasons": {
+    "unsupported-user": 3,
+    "no-target-allocation-benefit": 3,
+    "volatile-or-atomic-memory": 1,
+    "unknown-stored-value": 5,
+    "no-meaningful-width-reduction": 4
+  },
+  "experiment_c": {
+    "implemented": false,
+    "assessment": "not feasible as a fair small extension",
+    "reason": "A faithful comparison would require reconstructing instruction-level bit-usage propagation, conversion cleanup, byte-oriented width selection, AVR lowering, and the original MiBench setup; the current object-level suite cannot establish equivalence to Heo et al.'s implementation."
+  }
+}

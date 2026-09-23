@@ -1,0 +1,3 @@
+kind	objects	baseline_bytes	transformed_bytes	reduction_bytes	reduction_percent	mean_object_reduction_bytes	median_object_reduction_bytes	mean_object_reduction_percent	median_object_reduction_percent	positive_reductions	zero_reductions	negative_reductions
+alloca	21	140	78	62	44.29	2.95	3	42.86	50.0	18	3	0
+global	5	10	5	5	50.0	1.0	1	50.0	50.0	5	0	0

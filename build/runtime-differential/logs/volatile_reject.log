@@ -1,0 +1,9 @@
+[adaptive-width-mem] module=/mnt/c/Users/admin/Documents/ChatGPT/compilerdesign/build/runtime-differential/ir/volatile_reject.ll mode=adaptive-width-mem
+[adaptive-width-mem] candidate global name=.str linkage=private type=[6 x i8] safety=blocked reason=unsupported-user supported-uses=0 unsupported-uses=1 width=blocked
+[adaptive-width-mem] reject candidate=.str reason=unsupported-user user=call function=main
+[adaptive-width-mem] candidate alloca function=volatile_reject name= type=[2 x i16] safety=blocked reason=volatile-or-atomic-memory supported-uses=4 unsupported-uses=4 width=blocked
+[adaptive-width-mem] reject candidate=<unnamed> reason=volatile-or-atomic-memory user=load function=volatile_reject
+[adaptive-width-mem] reject candidate=<unnamed> reason=volatile-or-atomic-memory user=store function=volatile_reject
+[adaptive-width-mem] reject candidate=<unnamed> reason=volatile-or-atomic-memory user=load function=volatile_reject
+[adaptive-width-mem] reject candidate=<unnamed> reason=volatile-or-atomic-memory user=store function=volatile_reject
+[adaptive-width-mem] summary candidate-globals=1 candidate-allocas=1 safe=0 blocked=2 unknown-width=0 no-meaningful-reduction=0 rewrite-blocked=0 transformed-globals=0 transformed-allocas=0 loads-rewritten=0 stores-rewritten=0 bits-saved-per-element=0 no-target-allocation-benefit=0

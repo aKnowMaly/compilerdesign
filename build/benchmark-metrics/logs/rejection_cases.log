@@ -1,0 +1,6 @@
+[adaptive-width-mem] module=/mnt/c/Users/admin/Documents/ChatGPT/compilerdesign/build/benchmark-metrics/ir/rejection_cases.ll mode=adaptive-width-mem
+[adaptive-width-mem] candidate alloca function=rejection_cases name= type=[2 x i16] safety=blocked reason=unsupported-user supported-uses=5 unsupported-uses=1 width=blocked
+[adaptive-width-mem] reject candidate=<unnamed> reason=unsupported-user user=call function=rejection_cases
+[adaptive-width-mem] candidate alloca function=rejection_cases name= type=[2 x i16] safety=safe reason=supported-uses-only supported-uses=4 unsupported-uses=0 original-bits=16 proposed-bits=16 width-reason=inferred-stored-values extend=zext loads=1 stores=1
+[adaptive-width-mem] candidate alloca function=rejection_cases name= type=[2 x i16] safety=safe reason=supported-uses-only supported-uses=4 unsupported-uses=0 original-bits=16 proposed-bits=16 width-reason=inferred-stored-values extend=zext loads=1 stores=1
+[adaptive-width-mem] summary candidate-globals=0 candidate-allocas=3 safe=2 blocked=1 unknown-width=0 no-meaningful-reduction=2 rewrite-blocked=0 transformed-globals=0 transformed-allocas=0 loads-rewritten=0 stores-rewritten=0 bits-saved-per-element=0 no-target-allocation-benefit=0

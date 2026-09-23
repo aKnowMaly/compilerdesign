@@ -1,0 +1,2 @@
+status	llvm_version	compiler	environment
+passed	18	clang-18	WSL Ubuntu on Windows

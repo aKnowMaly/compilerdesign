@@ -1,0 +1,5 @@
+[adaptive-width-mem] module=/mnt/c/Users/admin/Documents/ChatGPT/compilerdesign/build/target-allocation-guard/ir/alias_pointer_reject.ll mode=adaptive-width-mem-target-aware
+[adaptive-width-mem] candidate alloca function=alias_pointer_reject name= type=[2 x i16] safety=blocked reason=unsupported-user supported-uses=4 unsupported-uses=2 width=blocked
+[adaptive-width-mem] reject candidate=<unnamed> reason=unsupported-user user=phi function=alias_pointer_reject
+[adaptive-width-mem] reject candidate=<unnamed> reason=unsupported-user user=phi function=alias_pointer_reject
+[adaptive-width-mem] summary candidate-globals=0 candidate-allocas=1 safe=0 blocked=1 unknown-width=0 no-meaningful-reduction=0 rewrite-blocked=0 transformed-globals=0 transformed-allocas=0 loads-rewritten=0 stores-rewritten=0 bits-saved-per-element=0 no-target-allocation-benefit=0

@@ -1,0 +1,6 @@
+[adaptive-width-mem] module=/mnt/c/Users/admin/Documents/ChatGPT/compilerdesign/build/runtime-differential/ir/tcp_flag_decode.ll mode=adaptive-width-mem
+[adaptive-width-mem] candidate global name=.str linkage=private type=[6 x i8] safety=blocked reason=unsupported-user supported-uses=0 unsupported-uses=1 width=blocked
+[adaptive-width-mem] reject candidate=.str reason=unsupported-user user=call function=main
+[adaptive-width-mem] candidate alloca function=tcp_flag_decode name= type=[6 x i16] safety=safe reason=supported-uses-only supported-uses=24 unsupported-uses=0 original-bits=16 proposed-bits=1 width-reason=inferred-stored-values extend=zext loads=6 stores=6
+[adaptive-width-mem] transform alloca name=.narrow original-bits=16 narrowed-bits=1 original-type="[6 x i16]" transformed-type="[6 x i1]" original-alloc-bytes=12 transformed-alloc-bytes=6 original-abi-align=2 transformed-abi-align=1
+[adaptive-width-mem] summary candidate-globals=1 candidate-allocas=1 safe=1 blocked=1 unknown-width=0 no-meaningful-reduction=0 rewrite-blocked=0 transformed-globals=0 transformed-allocas=1 loads-rewritten=6 stores-rewritten=6 bits-saved-per-element=15 no-target-allocation-benefit=0

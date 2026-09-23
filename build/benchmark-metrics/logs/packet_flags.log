@@ -1,0 +1,4 @@
+[adaptive-width-mem] module=/mnt/c/Users/admin/Documents/ChatGPT/compilerdesign/build/benchmark-metrics/ir/packet_flags.ll mode=adaptive-width-mem
+[adaptive-width-mem] candidate alloca function=packet_flags name= type=[4 x i16] safety=safe reason=supported-uses-only supported-uses=16 unsupported-uses=0 original-bits=16 proposed-bits=5 width-reason=inferred-stored-values extend=zext loads=4 stores=4
+[adaptive-width-mem] transform alloca name=.narrow original-bits=16 narrowed-bits=5 original-type="[4 x i16]" transformed-type="[4 x i5]" original-alloc-bytes=8 transformed-alloc-bytes=4 original-abi-align=2 transformed-abi-align=1
+[adaptive-width-mem] summary candidate-globals=0 candidate-allocas=1 safe=1 blocked=0 unknown-width=0 no-meaningful-reduction=0 rewrite-blocked=0 transformed-globals=0 transformed-allocas=1 loads-rewritten=4 stores-rewritten=4 bits-saved-per-element=11 no-target-allocation-benefit=0

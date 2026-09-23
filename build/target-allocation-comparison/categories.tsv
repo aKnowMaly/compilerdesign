@@ -1,0 +1,15 @@
+method	category	objects	positive	zero	negative	baseline_bytes	transformed_bytes	saved_bytes	reduction_percent	benefit_precision_percent
+A_current_conservative	dsp_signal	3	2	1	0	22	15	7	31.82	66.67
+A_current_conservative	embedded_state	5	3	2	0	28	18	10	35.71	60.0
+A_current_conservative	image_pixel	4	4	0	0	28	14	14	50.0	100.0
+A_current_conservative	lookup_global	5	5	0	0	10	5	5	50.0	100.0
+A_current_conservative	packet_header	5	5	0	0	42	21	21	50.0	100.0
+A_current_conservative	signed_values	2	2	0	0	8	4	4	50.0	100.0
+A_current_conservative	unsigned_ranges	2	2	0	0	12	6	6	50.0	100.0
+B_target_allocation_guard	dsp_signal	2	2	0	0	14	7	7	50.0	100.0
+B_target_allocation_guard	embedded_state	3	3	0	0	20	10	10	50.0	100.0
+B_target_allocation_guard	image_pixel	4	4	0	0	28	14	14	50.0	100.0
+B_target_allocation_guard	lookup_global	5	5	0	0	10	5	5	50.0	100.0
+B_target_allocation_guard	packet_header	5	5	0	0	42	21	21	50.0	100.0
+B_target_allocation_guard	signed_values	2	2	0	0	8	4	4	50.0	100.0
+B_target_allocation_guard	unsigned_ranges	2	2	0	0	12	6	6	50.0	100.0

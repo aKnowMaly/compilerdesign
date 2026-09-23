@@ -1,0 +1,10 @@
+method	reason	count
+A_current_conservative	no-meaningful-width-reduction	4
+A_current_conservative	unknown-stored-value	5
+A_current_conservative	unsupported-user	3
+A_current_conservative	volatile-or-atomic-memory	1
+B_target_allocation_guard	no-meaningful-width-reduction	4
+B_target_allocation_guard	no-target-allocation-benefit	3
+B_target_allocation_guard	unknown-stored-value	5
+B_target_allocation_guard	unsupported-user	3
+B_target_allocation_guard	volatile-or-atomic-memory	1

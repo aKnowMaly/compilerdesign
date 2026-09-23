@@ -1,0 +1,24 @@
+benchmark	category	object_kind	object_name	original_type	transformed_type	original_bits	transformed_bits	baseline_allocation_bytes	transformed_allocation_bytes	allocation_reduction_bytes	allocation_reduction_percent	original_abi_alignment_bytes	transformed_abi_alignment_bytes
+alpha_blend_weights	image_pixel	alloca	.narrow	[3 x i16]	[3 x i8]	16	8	6	3	3	50.00	2	1
+checksum_nibbles	packet_header	alloca	.narrow	[4 x i16]	[4 x i4]	16	4	8	4	4	50.00	2	1
+embedded_counters	embedded_state	alloca	.narrow	[4 x i16]	[4 x i5]	16	5	8	4	4	50.00	2	1
+fir4_coefficients	dsp_signal	alloca	.narrow	[4 x i16]	[4 x i3]	16	3	8	4	4	50.00	2	1
+global_constants	lookup_global	global	lut_a.narrow	i16	i3	16	3	2	1	1	50.00	2	1
+global_constants	lookup_global	global	lut_b.narrow	i16	i4	16	4	2	1	1	50.00	2	1
+global_flag_table	lookup_global	global	flags_a.narrow	i16	i1	16	1	2	1	1	50.00	2	1
+global_flag_table	lookup_global	global	flags_b.narrow	i16	i2	16	2	2	1	1	50.00	2	1
+global_flag_table	lookup_global	global	flags_c.narrow	i16	i3	16	3	2	1	1	50.00	2	1
+grayscale_threshold	image_pixel	alloca	.narrow	[4 x i16]	[4 x i8]	16	8	8	4	4	50.00	2	1
+ipv4_header_fields	packet_header	alloca	.narrow	[4 x i16]	[4 x i8]	16	8	8	4	4	50.00	2	1
+packet_flags	packet_header	alloca	.narrow	[4 x i16]	[4 x i5]	16	5	8	4	4	50.00	2	1
+pixel_channels	image_pixel	alloca	.narrow	[4 x i16]	[4 x i8]	16	8	8	4	4	50.00	2	1
+protocol_version_table	packet_header	alloca	.narrow	[3 x i16]	[3 x i5]	16	5	6	3	3	50.00	2	1
+quantized_filter	dsp_signal	alloca	.narrow	[3 x i16]	[3 x i7]	16	7	6	3	3	50.00	2	1
+rgb565_unpack	image_pixel	alloca	.narrow	[3 x i16]	[3 x i6]	16	6	6	3	3	50.00	2	1
+select_ranges	unsigned_ranges	alloca	.narrow	[2 x i16]	[2 x i6]	16	6	4	2	2	50.00	2	1
+signed_delta_pair	signed_values	alloca	.narrow	[2 x i16]	[2 x i8]	16	8	4	2	2	50.00	2	1
+signed_offsets	signed_values	alloca	.narrow	[2 x i16]	[2 x i8]	16	8	4	2	2	50.00	2	1
+small_state_machine	embedded_state	alloca	.narrow	[3 x i16]	[3 x i3]	16	3	6	3	3	50.00	2	1
+status_flags	embedded_state	alloca	.narrow	[3 x i16]	[3 x i3]	16	3	6	3	3	50.00	2	1
+tcp_flag_decode	packet_header	alloca	.narrow	[6 x i16]	[6 x i1]	16	1	12	6	6	50.00	2	1
+unsigned_histogram	unsigned_ranges	alloca	.narrow	[4 x i16]	[4 x i7]	16	7	8	4	4	50.00	2	1

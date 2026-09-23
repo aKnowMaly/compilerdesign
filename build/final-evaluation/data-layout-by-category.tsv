@@ -1,0 +1,8 @@
+category	objects	baseline_bytes	transformed_bytes	reduction_bytes	reduction_percent	mean_object_reduction_bytes	median_object_reduction_bytes	mean_object_reduction_percent	median_object_reduction_percent	positive_reductions	zero_reductions	negative_reductions
+dsp_signal	3	22	15	7	31.82	2.33	3	33.33	50.0	2	1	0
+embedded_state	5	28	18	10	35.71	2.0	3	30.0	50.0	3	2	0
+image_pixel	4	28	14	14	50.0	3.5	3.5	50.0	50.0	4	0	0
+lookup_global	5	10	5	5	50.0	1.0	1	50.0	50.0	5	0	0
+packet_header	5	42	21	21	50.0	4.2	4	50.0	50.0	5	0	0
+signed_values	2	8	4	4	50.0	2.0	2.0	50.0	50.0	2	0	0
+unsigned_ranges	2	12	6	6	50.0	3.0	3.0	50.0	50.0	2	0	0

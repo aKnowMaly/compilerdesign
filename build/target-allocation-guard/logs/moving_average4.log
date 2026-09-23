@@ -1,0 +1,4 @@
+[adaptive-width-mem] module=/mnt/c/Users/admin/Documents/ChatGPT/compilerdesign/build/target-allocation-guard/ir/moving_average4.ll mode=adaptive-width-mem-target-aware
+[adaptive-width-mem] candidate alloca function=moving_average4 name= type=[4 x i16] safety=safe reason=supported-uses-only supported-uses=16 unsupported-uses=0 original-bits=16 proposed-bits=10 width-reason=inferred-stored-values extend=zext loads=4 stores=4
+[adaptive-width-mem] reject candidate=<unnamed> reason=no-target-allocation-benefit baseline-alloc-bytes=8 transformed-alloc-bytes=8
+[adaptive-width-mem] summary candidate-globals=0 candidate-allocas=1 safe=1 blocked=0 unknown-width=0 no-meaningful-reduction=0 rewrite-blocked=0 transformed-globals=0 transformed-allocas=0 loads-rewritten=0 stores-rewritten=0 bits-saved-per-element=0 no-target-allocation-benefit=1

@@ -1,0 +1,6 @@
+claim_family	source	sha256
+coverage, IR deltas, pass timing	build/benchmark-metrics/benchmark-metrics.tsv	9741494810418f8dd941ee6f881e101203b45ef17eac33c778f485c645b13697
+runtime differential and binary sizes	build/runtime-differential/runtime-differential.tsv	f620e40f81f6822f1cad219d29c894f328344f454743c1725159964d1d1225b5
+transformed object widths	build/final-evaluation/transformed-widths.tsv	0501787e80d1afd6c3642f134c57b79bb365b0f36dbc26ee1ffbb0d2a85e5fa1
+DataLayout-derived allocation sizes	build/final-evaluation/data-layout-allocations.tsv	0501787e80d1afd6c3642f134c57b79bb365b0f36dbc26ee1ffbb0d2a85e5fa1
+full test-suite status	build/final-test-status.tsv	ff3a1db67864ce2cbdadf0170c62b2209478124a88ba49404c816ee8e8fe07b0
