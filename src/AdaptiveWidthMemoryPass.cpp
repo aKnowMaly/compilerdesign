@@ -62,6 +62,7 @@ struct PassConfig {
   bool ProcessGlobals = true;
   bool ProcessAllocas = true;
   bool RequireTargetAllocationBenefit = false;
+  bool PreferAllocationEquivalentNativeWidth = false;
   StringRef ModeName = "adaptive-width-mem";
 };
 
@@ -261,6 +262,25 @@ private:
     if (Width.ProposedBits > Width.OriginalBits)
       Width.ProposedBits = Width.OriginalBits;
 
+    // A wider safe representation may have the same allocation as the minimum.
+    // Only the experimental native-width pipeline changes this selection.
+    if (Config.PreferAllocationEquivalentNativeWidth &&
+        Width.ProposedBits < Width.OriginalBits) {
+      for (unsigned NativeBits : {8u, 16u, 32u, 64u}) {
+        if (NativeBits < Width.ProposedBits)
+          continue;
+        if (NativeBits >= Width.OriginalBits)
+          break;
+        Type *MinimumTy = replaceIntegerElementType(
+            StoredTy, IntegerType::get(Root.getContext(), Width.ProposedBits));
+        Type *NativeTy = replaceIntegerElementType(
+            StoredTy, IntegerType::get(Root.getContext(), NativeBits));
+        if (DL->getTypeAllocSize(MinimumTy) == DL->getTypeAllocSize(NativeTy))
+          Width.ProposedBits = NativeBits;
+        break;
+      }
+    }
+
     return Width;
   }
 
@@ -315,7 +335,10 @@ private:
 
     IntegerType *NewElementTy =
         IntegerType::get(AI.getContext(), Width.ProposedBits);
-    if (!canRewritePointerUsers(AI, *OldElementTy, *NewElementTy)) {
+    if (!AI.isStaticAlloca() || !isa<ConstantInt>(AI.getArraySize()) ||
+        !cast<ConstantInt>(AI.getArraySize())->isOne() ||
+        AI.isUsedWithInAlloca() || AI.isSwiftError() ||
+        !canRewritePointerUsers(AI, AllocatedTy, *OldElementTy, *NewElementTy)) {
       ++Stats.RewriteBlockedCandidates;
       return false;
     }
@@ -373,7 +396,7 @@ private:
 
     IntegerType *NewElementTy =
         IntegerType::get(GV.getContext(), Width.ProposedBits);
-    if (!canRewritePointerUsers(GV, *OldElementTy, *NewElementTy)) {
+    if (!canRewritePointerUsers(GV, ValueTy, *OldElementTy, *NewElementTy)) {
       ++Stats.RewriteBlockedCandidates;
       return false;
     }
@@ -478,13 +501,16 @@ private:
     return UndefValue::get(NewTy);
   }
 
-  bool canRewritePointerUsers(Value &Ptr, IntegerType &OldElementTy,
+  bool canRewritePointerUsers(Value &Ptr, Type *PointeeTy,
+                              IntegerType &OldElementTy,
                               IntegerType &NewElementTy) {
     SmallPtrSet<const Value *, 16> Visited;
-    return canRewritePointerUsersImpl(Ptr, OldElementTy, NewElementTy, Visited);
+    return canRewritePointerUsersImpl(Ptr, PointeeTy, OldElementTy,
+                                      NewElementTy, Visited);
   }
 
-  bool canRewritePointerUsersImpl(Value &Ptr, IntegerType &OldElementTy,
+  bool canRewritePointerUsersImpl(Value &Ptr, Type *PointeeTy,
+                                  IntegerType &OldElementTy,
                                   IntegerType &NewElementTy,
                                   SmallPtrSetImpl<const Value *> &Visited) {
     if (!Visited.insert(&Ptr).second)
@@ -494,14 +520,21 @@ private:
       User *Usr = U.getUser();
 
       if (auto *GEP = dyn_cast<GetElementPtrInst>(Usr)) {
-        if (!canRewritePointerUsersImpl(*GEP, OldElementTy, NewElementTy,
+        // Opaque pointers allow byte/struct reinterpretation without a cast.
+        // Rebuilding such a GEP with the same indices changes its meaning.
+        if (GEP->getPointerOperand() != &Ptr ||
+            GEP->getSourceElementType() != PointeeTy)
+          return false;
+        if (!canRewritePointerUsersImpl(*GEP, GEP->getResultElementType(),
+                                        OldElementTy, NewElementTy,
                                         Visited))
           return false;
         continue;
       }
 
       if (auto *LI = dyn_cast<LoadInst>(Usr)) {
-        if (LI->getPointerOperand() != &Ptr || LI->getType() != &OldElementTy)
+        if (PointeeTy != &OldElementTy ||
+            LI->getPointerOperand() != &Ptr || LI->getType() != &OldElementTy)
           return false;
         if (LI->isVolatile() || LI->isAtomic())
           return false;
@@ -509,7 +542,7 @@ private:
       }
 
       if (auto *SI = dyn_cast<StoreInst>(Usr)) {
-        if (SI->getPointerOperand() != &Ptr ||
+        if (PointeeTy != &OldElementTy || SI->getPointerOperand() != &Ptr ||
             SI->getValueOperand()->getType() != &OldElementTy)
           return false;
         if (SI->isVolatile() || SI->isAtomic())
@@ -558,7 +591,7 @@ private:
 
         IRBuilder<> Builder(LI);
         LoadInst *NewLoad = Builder.CreateAlignedLoad(
-            NewElementTy, &NewPtr, LI->getAlign(), LI->getName() + ".narrow");
+            NewElementTy, &NewPtr, Align(1), LI->getName() + ".narrow");
         Value *Extended =
             Extension == WidthSummary::ExtensionKind::Sign
                 ? Builder.CreateSExt(NewLoad, LI->getType(),
@@ -582,6 +615,9 @@ private:
                                        Stored->getName() + ".narrow");
         SI->setOperand(0, Stored);
         SI->setOperand(1, &NewPtr);
+        // Array strides can shrink; the old access alignment is no longer a
+        // valid promise for the replacement address (even on x86).
+        SI->setAlignment(Align(1));
         ++Stats.StoresRewritten;
       }
     }
@@ -729,6 +765,10 @@ private:
       if (!inferRequiredBits(I->getOperand(0), Bits, UsedInference, Extension,
                              Visited))
         return false;
+      // zext(sext(x)) retains the sign-replicated bits of the intermediate
+      // value. They cannot be discarded and then recovered by zero-extension.
+      if (Extension == WidthSummary::ExtensionKind::Sign)
+        Bits = cast<IntegerType>(I->getOperand(0)->getType())->getBitWidth();
       Extension = WidthSummary::ExtensionKind::Zero;
       UsedInference = true;
       return true;
@@ -963,6 +1003,10 @@ extern "C" LLVM_ATTRIBUTE_WEAK PassPluginLibraryInfo llvmGetPassPluginInfo() {
                   } else if (Name == "adaptive-width-mem-target-aware") {
                     Config.RequireTargetAllocationBenefit = true;
                     Config.ModeName = "adaptive-width-mem-target-aware";
+                  } else if (Name == "adaptive-width-mem-native-width") {
+                    Config.RequireTargetAllocationBenefit = true;
+                    Config.PreferAllocationEquivalentNativeWidth = true;
+                    Config.ModeName = "adaptive-width-mem-native-width";
                   } else {
                     return false;
                   }

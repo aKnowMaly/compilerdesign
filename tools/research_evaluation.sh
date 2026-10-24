@@ -8,7 +8,7 @@ SUMMARY_MD="$OUT_DIR/summary.md"
 
 mkdir -p "$OUT_DIR/transformed-ir" "$OUT_DIR/logs"
 
-"$ROOT_DIR/tools/demo_report.sh" > "$OUT_DIR/raw-report.tsv"
+bash "$ROOT_DIR/tools/demo_report.sh" > "$OUT_DIR/raw-report.tsv"
 cp "$REPORT_TSV" "$OUT_DIR/adaptive-width-report.tsv"
 
 for ir in "$ROOT_DIR"/build/*.demo.out.ll; do

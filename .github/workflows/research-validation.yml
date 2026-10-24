@@ -1,0 +1,109 @@
+name: Correctness and research evidence
+on:
+  push:
+    branches: ["codex/correctness-width-study"]
+    paths-ignore: ["paper/**", "output/**", "docs/**", "research/**", "README.md"]
+  pull_request:
+    branches: [main]
+    paths-ignore: ["paper/**", "output/**", "docs/**", "README.md"]
+concurrency:
+  group: research-${{ github.head_ref || github.ref_name }}
+  cancel-in-progress: true
+permissions:
+  contents: read
+jobs:
+  validate:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    env:
+      LLVM_DIR: /usr/lib/llvm-18/lib/cmake/llvm
+      JOBS: "4"
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install LLVM 18 and build dependencies
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y clang-18 llvm-18-dev llvm-18-tools cmake ninja-build python3-reportlab
+          echo /usr/lib/llvm-18/bin >> "$GITHUB_PATH"
+      - name: Build, regression tests, and controlled evaluation
+        run: bash tests/run_tests.sh
+      - name: Target allocation comparison
+        run: bash tools/target_allocation_experiment.sh
+      - name: Allocation-equivalent width comparison
+        run: python3 tools/width_choice_experiment.py
+      - name: External MiBench validation
+        run: bash tools/external_benchmark_experiment.sh
+      - name: Expanded external holdout corpus
+        run: python3 tools/expanded_corpus_experiment.py
+      - name: Generate paper tables and figures
+        run: python3 tools/generate_paper_assets.py
+      - name: Compile revised paper
+        run: |
+          curl --fail --location --retry 3 https://github.com/tectonic-typesetting/tectonic/releases/download/tectonic%400.15.0/tectonic-0.15.0-x86_64-unknown-linux-musl.tar.gz --output build/tectonic.tar.gz
+          tar -xzf build/tectonic.tar.gz -C build
+          mkdir -p output/pdf
+          (cd paper && ../build/tectonic -X compile main.tex --outdir ../output/pdf --keep-logs)
+          mv output/pdf/main.pdf output/pdf/adaptive-width-memory-narrowing-paper.pdf
+      - name: Upload compact research snapshot and paper
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: research-snapshot-and-paper
+          path: |
+            build/safety-regressions/results.json
+            build/safety-regressions/*.ll
+            build/final-evaluation/*.json
+            build/final-evaluation/*.tsv
+            build/final-evaluation/*.md
+            build/final-test-status.tsv
+            build/benchmark-metrics/benchmark-metrics.tsv
+            build/target-allocation-comparison/*.json
+            build/target-allocation-comparison/*.tsv
+            build/target-allocation-comparison/*.md
+            build/width-choice/results.json
+            build/width-choice/objects.tsv
+            build/width-choice/benchmarks.tsv
+            build/width-choice/summary.md
+            build/width-choice/machine/*.asm
+            build/external-benchmark-validation/*.json
+            build/external-benchmark-validation/*.tsv
+            build/external-benchmark-validation/*.md
+            build/expanded-corpus/results.json
+            build/expanded-corpus/programs.tsv
+            build/expanded-corpus/candidates.tsv
+            build/expanded-corpus/families.tsv
+            build/expanded-corpus/summary.md
+            build/expanded-corpus/official-build.log
+            build/expanded-corpus/programs/*/error.txt
+            build/expanded-corpus/programs/*/baseline-runtime.json
+            build/expanded-corpus/programs/*/official-runtime.json
+            build/expanded-corpus/programs/*/runtime-*.json
+            build/expanded-corpus/programs/*/runtime-*.stderr
+            paper/generated_metrics.tex
+            paper/width_choice_metrics.tex
+            paper/expanded_corpus_metrics.tex
+            paper/tables/
+            paper/figures/
+            output/pdf/
+          retention-days: 14
+      - name: Upload reproducible evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: research-evidence
+          path: |
+            build/safety-regressions/
+            build/benchmark-metrics/
+            build/runtime-differential/
+            build/final-evaluation/
+            build/final-test-status.tsv
+            build/target-allocation-comparison/
+            build/target-allocation-guard/
+            build/target-allocation-guard-runtime/
+            build/width-choice/
+            build/external-benchmark-validation/
+            build/expanded-corpus/
+            paper/generated_metrics.tex
+            paper/tables/
+            paper/figures/
+          retention-days: 14

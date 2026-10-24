@@ -1,6 +1,6 @@
 # Target-Aware Conservative Width Narrowing of LLVM Memory Objects
 
-This repository contains the frozen LLVM 18 MVP, its tests, a category-aware
+This repository contains the revised LLVM 18 prototype, its tests, a category-aware
 32-kernel evaluation suite, deterministic differential testing, an authoritative
 evidence snapshot, a controlled target-allocation A/B experiment, and the
 LaTeX research paper.
@@ -44,10 +44,29 @@ opt-18 -load-pass-plugin=build/AdaptiveWidthMemoryPass.so \
 
 Available pipelines are `adaptive-width-mem`, `adaptive-width-mem-log`,
 `adaptive-width-mem-allocas`, `adaptive-width-mem-globals`, and
-`adaptive-width-mem-target-aware`. The last pipeline accepts a safe rewrite only
+`adaptive-width-mem-target-aware`, and `adaptive-width-mem-native-width`.
+The target-aware pipeline accepts a safe rewrite only
 when `DataLayout::getTypeAllocSize` strictly decreases for the complete object.
+The native-width experiment uses the same safety and allocation checks but
+selects the next width in 8/16/32/64 only when its complete-object allocation
+equals that of the minimum safe width.
+
+"Global" means module-level storage. LLVM `private` restricts direct references
+to the current module and omits the symbol from the object-file symbol table;
+`internal` emits a local symbol and corresponds to file-scope C `static`.
+
+The revision repairs nested sign/zero extension inference and resets rewritten
+access alignment to one because narrowing changes array strides. GEP source
+types must match the parent object path; opaque-pointer reinterpretations,
+dynamic-count allocas, and special alloca modes are rejected. The legacy log
+fields `safe`/`blocked` classify pointer users only, not the full safety predicate.
 
 ## Complete validation and final evidence
+
+The permanent revised evidence is in `research/revision-2026-10-24/`, with the
+full compact snapshot in `evidence.zip` and an explanation in
+`docs/research-revision.md`. Previously checked-in `build/` artifacts are
+historical generated outputs; rerun the commands below for current artifacts.
 
 The complete runner builds the plugin, checks fixtures with LLVM verification
 and FileCheck, evaluates all benchmarks, compiles and compares baseline and
@@ -65,6 +84,7 @@ bash tools/benchmark_metrics.sh
 bash tools/runtime_differential.sh
 python3 tools/final_evaluation.py
 bash tools/target_allocation_experiment.sh
+python3 tools/width_choice_experiment.py
 ```
 
 Primary generated evidence:
@@ -147,7 +167,34 @@ DataLayout and one finite workload per program; it does not establish
 target-independent benefit, runtime speedup, physical-memory reduction, or
 universal equivalence.
 
-## Build the paper
+## Expanded external research corpus
+
+`benchmarks/external-corpus.json` preselects ten additional LLVM test-suite
+families at the same pinned revision. `python3 tools/expanded_corpus_experiment.py`
+evaluates every configured C-only target with Methods A/B/C. It currently adds
+107 C programs and 456 compilation units, making 124 external programs and
+667 compilation units with MiBench, plus the separate 32 controlled kernels.
+The expanded holdout contains 4,205 memory-object candidates; the external
+cohorts together contain 9,208. These are distinct counting units.
+
+The runner repeats the baseline to establish deterministic output, compares
+stdout/stderr and generated files, labels exit-status-only cases, and records
+all failures, skips, exact-source duplicates and zero-transformation programs.
+`python3 tests/check_expanded_results.py build/expanded-corpus` independently
+reconciles every program/candidate/family row. See `docs/corpus-expansion.md`
+for the interpretation and the permanent evidence location.
+
+## Build the revised paper
+
+The GitHub Actions workflow builds LLVM 18 tests, repeats the controlled and
+external evaluations, and uploads the complete evidence. The safety regression
+suite executes eight O0/O2 binaries, exhaustively checking the 256 nested-cast
+inputs and 65536 inputs per addressing case. The width-choice experiment reports
+every kernel, including regressions, in `build/width-choice/benchmarks.tsv`.
+Its static machine-instruction and text-section metrics do not measure runtime.
+
+The paper needs fresh A/B, external, and width-choice results before regenerating
+its tables. Do not combine historical evidence with a changed pass implementation.
 
 From Windows PowerShell, after the full test suite:
 

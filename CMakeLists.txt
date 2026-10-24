@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.20)
 
-project(AdaptiveWidthMemoryPass LANGUAGES CXX)
+project(AdaptiveWidthMemoryPass LANGUAGES C CXX)
 
 find_package(LLVM REQUIRED CONFIG)
 
