@@ -1,0 +1,26 @@
+{
+  "schema_version": 1,
+  "repository": "https://github.com/llvm/llvm-test-suite.git",
+  "commit": "4b2c892865cbbb05ee996c88794a58e17d3adb81",
+  "selection_rule": "All configured C-only executable targets in the listed families, selected before measuring transformation outcomes. Existing MiBench results remain a separate cohort.",
+  "families": [
+    "SingleSource/Benchmarks/Stanford",
+    "SingleSource/Benchmarks/Shootout",
+    "SingleSource/Benchmarks/Misc",
+    "SingleSource/Benchmarks/CoyoteBench",
+    "MultiSource/Benchmarks/BitBench",
+    "MultiSource/Benchmarks/McCat",
+    "MultiSource/Benchmarks/Olden",
+    "MultiSource/Benchmarks/Ptrdist",
+    "MultiSource/Benchmarks/FreeBench",
+    "MultiSource/Benchmarks/Prolangs-C"
+  ],
+  "run_type": "train",
+  "small_problem_size": true,
+  "runtime_timeout_seconds": 20,
+  "methods": {
+    "A": "adaptive-width-mem",
+    "B": "adaptive-width-mem-target-aware",
+    "C": "adaptive-width-mem-native-width"
+  }
+}

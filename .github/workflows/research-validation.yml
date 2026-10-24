@@ -33,6 +33,8 @@ jobs:
         run: python3 tools/width_choice_experiment.py
       - name: External MiBench validation
         run: bash tools/external_benchmark_experiment.sh
+      - name: Expanded external holdout corpus
+        run: python3 tools/expanded_corpus_experiment.py
       - name: Generate paper tables and figures
         run: python3 tools/generate_paper_assets.py
       - name: Compile revised paper
@@ -65,6 +67,15 @@ jobs:
             build/external-benchmark-validation/*.json
             build/external-benchmark-validation/*.tsv
             build/external-benchmark-validation/*.md
+            build/expanded-corpus/results.json
+            build/expanded-corpus/programs.tsv
+            build/expanded-corpus/candidates.tsv
+            build/expanded-corpus/families.tsv
+            build/expanded-corpus/summary.md
+            build/expanded-corpus/official-build.log
+            build/expanded-corpus/programs/*/error.txt
+            build/expanded-corpus/programs/*/baseline-runtime.json
+            build/expanded-corpus/programs/*/runtime-*.json
             paper/generated_metrics.tex
             paper/width_choice_metrics.tex
             paper/tables/
@@ -87,6 +98,7 @@ jobs:
             build/target-allocation-guard-runtime/
             build/width-choice/
             build/external-benchmark-validation/
+            build/expanded-corpus/
             paper/generated_metrics.tex
             paper/tables/
             paper/figures/
