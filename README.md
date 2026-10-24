@@ -167,7 +167,24 @@ DataLayout and one finite workload per program; it does not establish
 target-independent benefit, runtime speedup, physical-memory reduction, or
 universal equivalence.
 
-## Build the paper
+## Expanded external research corpus
+
+`benchmarks/external-corpus.json` preselects ten additional LLVM test-suite
+families at the same pinned revision. `python3 tools/expanded_corpus_experiment.py`
+evaluates every configured C-only target with Methods A/B/C. It currently adds
+107 C programs and 456 compilation units, making 124 external programs and
+667 compilation units with MiBench, plus the separate 32 controlled kernels.
+The expanded holdout contains 4,205 memory-object candidates; the external
+cohorts together contain 9,208. These are distinct counting units.
+
+The runner repeats the baseline to establish deterministic output, compares
+stdout/stderr and generated files, labels exit-status-only cases, and records
+all failures, skips, exact-source duplicates and zero-transformation programs.
+`python3 tests/check_expanded_results.py build/expanded-corpus` independently
+reconciles every program/candidate/family row. See `docs/corpus-expansion.md`
+for the interpretation and the permanent evidence location.
+
+## Build the revised paper
 
 The GitHub Actions workflow builds LLVM 18 tests, repeats the controlled and
 external evaluations, and uploads the complete evidence. The safety regression

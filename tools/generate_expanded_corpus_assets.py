@@ -13,6 +13,11 @@ def generate():
     assert hashlib.sha256(source.encode()).hexdigest()==data["pass_source_sha256"]
     with (ROOT/"build/expanded-corpus/families.tsv").open() as f:
         families=list(csv.DictReader(f,delimiter="\t"))
+    with (ROOT/"build/expanded-corpus/programs.tsv").open() as f:
+        programs=list(csv.DictReader(f,delimiter="\t"))
+    eligible=[r for r in programs if r["status"]=="EVALUATED" and r["BC_allocation_matched"]=="True" and int(r["BC_changed_widths"])]
+    instruction_delta=sum(int(r["C_machine_instructions"])-int(r["B_machine_instructions"]) for r in eligible)
+    text_delta=sum(int(r["C_text_bytes"])-int(r["B_text_bytes"]) for r in eligible)
     values={"ExpandedPrograms":data["programs_evaluated"],"ExpandedUnits":data["compilation_units"],
             "ExpandedUniqueSources":data["unique_source_content_hashes"],"ExpandedUniquePrograms":data["unique_evaluated_source_sets"],
             "ExpandedCandidates":data["A"]["candidates"],"ExpandedATransformed":data["A"]["transformed"],
@@ -21,6 +26,8 @@ def generate():
             "ExpandedObservablePass":data["B"]["observable_passes"],"ExpandedAffectedPrograms":data["B"]["programs_transformed"],
             "ExpandedWidthPrograms":data["width_choice_eligible_programs"],"ExpandedWidthBetter":data["width_instruction_better"],
             "ExpandedWidthEqual":data["width_instruction_equal"],"ExpandedWidthWorse":data["width_instruction_worse"],
+            "ExpandedWidthValidated":data["runtime_validated_width_choice_programs"],
+            "ExpandedInstructionDelta":f"{instruction_delta:+d}","ExpandedTextDelta":f"{text_delta:+d}",
             "AllExternalPrograms":17+data["programs_evaluated"],"AllExternalUnits":211+data["compilation_units"],
             "AllExternalCandidates":5003+data["A"]["candidates"],"AllPrograms":32+17+data["programs_evaluated"]}
     (ROOT/"paper/expanded_corpus_metrics.tex").write_text("% Generated holdout results.\n"+"".join(f"\\newcommand{{\\{k}}}{{{v}}}\n" for k,v in values.items()))

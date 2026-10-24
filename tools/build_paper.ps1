@@ -15,6 +15,9 @@ if (-not (Test-Path -LiteralPath (Join-Path $root 'build\external-benchmark-vali
 if (-not (Test-Path -LiteralPath (Join-Path $root 'build\width-choice\results.json'))) {
   throw 'Run tools/width_choice_experiment.py before building the revised paper.'
 }
+if (-not (Test-Path -LiteralPath (Join-Path $root 'build\expanded-corpus\results.json'))) {
+  throw 'Run tools/expanded_corpus_experiment.py before building the expanded-corpus paper.'
+}
 if (-not (Test-Path -LiteralPath $tectonic)) {
   & (Join-Path $PSScriptRoot 'install_tectonic.ps1') | Out-Null
 }
@@ -22,6 +25,8 @@ $python = if (Test-Path -LiteralPath $bundledPython) { $bundledPython } else { '
 
 & $python (Join-Path $root 'tests\check_external_results.py') (Join-Path $root 'build\external-benchmark-validation')
 if ($LASTEXITCODE -ne 0) { throw 'External MiBench evidence validation failed.' }
+& $python (Join-Path $root 'tests\check_expanded_results.py') (Join-Path $root 'build\expanded-corpus')
+if ($LASTEXITCODE -ne 0) { throw 'Expanded corpus evidence validation failed.' }
 
 & $python (Join-Path $PSScriptRoot 'generate_paper_assets.py')
 if ($LASTEXITCODE -ne 0) { throw 'Paper asset generation failed.' }

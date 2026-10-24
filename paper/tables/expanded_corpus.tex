@@ -1,0 +1,26 @@
+\begin{table*}[t]
+\centering
+\caption{Expanded external holdout corpus. Every configured C-only target is
+included, including programs with zero transformations. Candidate counts denote
+memory objects. MiBench and the controlled kernels are separate cohorts.}
+\label{tab:expanded-corpus}
+\small
+\begin{tabular}{@{}lrrrrrr@{}}
+\toprule
+Family & Programs & C units & Candidates & A objects & B/C objects & B/C saved bytes \\
+\midrule
+BitBench & 4 & 4 & 23 & 0 & 0 & 0 \\
+CoyoteBench & 3 & 3 & 21 & 0 & 0 & 0 \\
+FreeBench & 7 & 16 & 239 & 1 & 1 & 3 \\
+McCat & 10 & 37 & 155 & 0 & 0 & 0 \\
+Misc & 27 & 27 & 176 & 4 & 3 & 13 \\
+Olden & 10 & 36 & 99 & 0 & 0 & 0 \\
+Prolangs-C & 16 & 284 & 3108 & 14 & 14 & 537 \\
+Ptrdist & 5 & 24 & 314 & 6 & 6 & 26 \\
+Shootout & 14 & 14 & 41 & 1 & 0 & 0 \\
+Stanford & 11 & 11 & 29 & 0 & 0 & 0 \\
+\midrule
+Total & 107 & 456 & 4205 & 26 & 24 & 579 \\
+\bottomrule
+\end{tabular}
+\end{table*}

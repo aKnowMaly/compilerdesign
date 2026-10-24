@@ -18,6 +18,7 @@
 
 \input{generated_metrics}
 \input{width_choice_metrics}
+\input{expanded_corpus_metrics}
 
 \definecolor{codegray}{RGB}{246,247,249}
 \lstdefinelanguage{LLVM}{
@@ -49,7 +50,7 @@
 \setlength{\floatsep}{5pt plus 2pt minus 2pt}
 \setlength{\intextsep}{5pt plus 2pt minus 2pt}
 \setlength{\bibsep}{0.5pt}
-\renewcommand{\bibfont}{\fontsize{7.5pt}{8.2pt}\selectfont}
+\renewcommand{\bibfont}{\fontsize{7.5pt}{8.1pt}\selectfont}
 \Urlmuskip=0mu plus 1mu
 
 \title{\vspace{-0.55in}\bfseries Target-Aware Conservative Width Narrowing\\of LLVM Memory Objects}
@@ -91,7 +92,13 @@ repeats the selection effect: A accepts \ExternalAPositive{} positive and
 \ExternalAExecutableDelta{} and \ExternalBExecutableDelta{} bytes. Thus the
 evidence supports target-aware transformation selection. A separate controlled
 comparison tests conventional widths with the same allocation as minimum safe
-widths. The study makes no runtime, energy, or physical-memory improvement claim.
+widths. A preselected holdout adds \ExpandedPrograms{} C programs from ten
+benchmark families, covering \ExpandedUnits{} compilation units and
+\ExpandedCandidates{} candidate objects. Across \ExpandedWidthPrograms{}
+holdout programs with changed allocation-equivalent representations,
+conventional widths reduce static instruction counts in \ExpandedWidthBetter{},
+tie in \ExpandedWidthEqual{}, and regress in \ExpandedWidthWorse{}.
+The study makes no runtime, energy, or physical-memory improvement claim.
 \end{abstract}
 
 \noindent\textbf{Keywords:} LLVM, bit-width inference, memory-object narrowing,
@@ -168,6 +175,9 @@ selection behavior outside the purpose-built kernels; and (7) a controlled
 allocation-equivalent width comparison reporting static machine-code outcomes
 for every kernel, including regressions. These are scoped implementation and
 empirical contributions; no first-ever bit-width analysis is claimed.
+The revised evaluation additionally applies all three methods to a preselected
+external holdout spanning ten benchmark families rather than relying only on
+the purpose-built kernels for width-choice evidence.
 
 \section{Background}
 
@@ -723,6 +733,35 @@ bytes. These are neither dynamically executed instruction counts nor timings.
 The same deterministic runtime harness independently checks B and C against
 the original program. Width-choice results are not extrapolated to MiBench.
 
+\subsection{Expanded External Holdout Protocol}
+
+\path{benchmarks/external-corpus.json} fixes ten LLVM test-suite families before
+observing their transformation outcomes: Stanford, Shootout, Misc, CoyoteBench,
+BitBench, McCat, Olden, Ptrdist, FreeBench, and Prolangs-C. The source commit is
+the same pinned LLVM test-suite revision as MiBench \citep{llvmTestSuite}.
+All configured C-only executable targets are included; a non-C target is
+explicitly excluded. Sources are unmodified, the suite's training commands and
+small-problem configuration are used, and the pass implementation is unchanged.
+This is a distinct holdout cohort, not an enlargement of the controlled kernels.
+
+\path{tools/expanded_corpus_experiment.py} preserves per-program, per-family
+and per-candidate records. Program instances, distinct source-content sets,
+translation units and unique C-source hashes are reported separately. Hashes
+detect exact source duplicates, not shared algorithms or statistical
+independence. Failed or zero-transformation cases are retained in coverage
+reports. The independent \path{tests/check_expanded_results.py} reconciles
+JSON summaries against individual TSV rows.
+
+Each original program is executed twice in isolated copies of its packaged
+working directory. Only successful, repeatable baselines admit differential
+comparison. The comparison covers stdout, stderr, and generated or modified
+file hashes. An abnormal transformed execution against a valid baseline is a
+failure, including a transformed-only timeout; it is never silently skipped.
+Programs with only an exit-status observation are labeled separately from
+those with observable output. A 20-second per-execution timeout bounds the
+workload; these executions do not measure performance. Static width-choice
+comparisons require matching B/C accepted-object sets and allocation bytes.
+
 \section{Results}
 
 \subsection{Transformation Coverage}
@@ -914,6 +953,52 @@ and 69 to 98 bytes; its conventional-width output contains vector loads and
 packing instructions absent from the minimum-width output. These are direct
 disassembly observations, not a claim that vectorization is generally harmful.
 
+\subsection{Expanded External Holdout Results}
+
+\input{tables/expanded_corpus}
+
+The holdout evaluates \ExpandedPrograms{} C programs with
+\ExpandedUniquePrograms{} distinct C-source-content sets and
+\ExpandedUnits{} compilation units containing \ExpandedUniqueSources{}
+unique source-file hashes. It encounters \ExpandedCandidates{} candidate
+memory objects. Method A transforms \ExpandedATransformed{} objects;
+Methods B and C each transform \ExpandedBTransformed{}, eliminating two
+allocation-neutral rewrites while retaining the \ExpandedSavedBytes{} bytes
+of observed allocation saving. Method B transforms at least one object in only
+\ExpandedAffectedPrograms{} programs. The larger denominator therefore does
+not establish broad transformation applicability.
+
+All three methods have \ExpandedPass{} passing differential comparisons,
+\ExpandedFail{} failures, and \ExpandedSkip{} skipped baseline workloads.
+Of those passes, \ExpandedObservablePass{} have nonempty observable output or
+generated-file evidence; two are exit-status-only comparisons. The skipped
+commands are \texttt{archie}, \texttt{football}, \texttt{gnugo}, and
+\texttt{richards\_benchmark}, whose rebuilt baseline execution is unsuccessful.
+They remain in static coverage but provide no dynamic-equivalence evidence.
+The same four commands also fail for the suite's official packaged executables,
+so they are recorded as baseline/workload compatibility cases.
+
+The allocation-equivalent width comparison changes representations in
+\ExpandedWidthPrograms{} programs, with no B/C allocation mismatch. C uses
+fewer static machine instructions in \ExpandedWidthBetter{}, the same number
+in \ExpandedWidthEqual{}, and more in \ExpandedWidthWorse{}. The improvements
+occur in FreeBench's \texttt{analyzer}, Prolangs-C's \texttt{unix-tbl}, and
+Ptrdist's \texttt{anagram} and \texttt{bc}; all four pass differential testing.
+Aggregate C-minus-B changes are \ExpandedInstructionDelta{} static machine
+instructions and \ExpandedTextDelta{} text-section bytes over the
+changed-representation programs.
+Of these programs, \ExpandedWidthValidated{} have successful repeatable runtime
+baselines; the remaining three contribute only static width-choice evidence.
+This extends width-choice evidence beyond the controlled kernels. The absence
+of regressions in this holdout does not erase the two controlled regressions,
+prove runtime benefit, or establish a universally preferable width policy.
+
+Together with the separate 17-program MiBench cohort, external coverage is
+\AllExternalPrograms{} programs, \AllExternalUnits{} C compilation units and
+\AllExternalCandidates{} candidate objects. Including the 32 controlled
+kernels yields \AllPrograms{} program instances. These counts refer to
+different units of evidence and are not interchangeable sample sizes.
+
 \section{Discussion}
 
 The controlled evaluation yields eight bounded findings. First, a safe
@@ -954,11 +1039,13 @@ The width-choice comparison isolates a second decision after allocation benefit:
 \section{Limitations and Threats to Validity}
 
 \textbf{Benchmark representativeness.} The 32 kernels are purpose-built
-microbenchmarks. External coverage adds only \ExternalPrograms{} MiBench
-programs comprising \ExternalCompilationUnits{} unmodified C compilation
-units, not all versions of MiBench or all real-world software. Transformations
-occur in only six of the 17 programs, so the experiment does not establish broad
-prevalence.
+microbenchmarks. External coverage comprises \AllExternalPrograms{} programs
+and \AllExternalUnits{} C compilation units, split into MiBench and ten
+additional families. This is a purposively selected benchmark corpus, not a
+random sample of real-world software. Programs within a family are correlated;
+source hashes do not establish algorithmic independence. Transformations occur
+in only six MiBench programs and \ExpandedAffectedPrograms{} holdout programs,
+so the experiment does not establish broad prevalence.
 
 \textbf{Supported object forms.} Heap allocations, structures, scalar allocas,
 vectors, externally visible objects, arbitrary aliases, interprocedural pointer
@@ -1002,7 +1089,12 @@ implemented predicates; LLVM verification checks structural validity; runtime
 tests provide finite evidence. There is no mechanized proof or translation
 validation of every rewrite.
 
-\textbf{Width-choice validity.} Method C is evaluated only on the controlled kernels, one target and one compiler release. Static instruction counts include padding NOPs; text-section changes do not establish execution-time changes. A per-kernel choice made after inspecting these results would be overfitting, so all results are reported and no outcome-guided selector is claimed.
+\textbf{Width-choice validity.} Method C is evaluated on the controlled kernels
+and the preselected external holdout, one target and one compiler release.
+Static instruction counts include padding NOPs; text-section changes do not
+establish execution-time changes. Some programs lack valid dynamic baselines.
+A per-program choice made after inspecting these results would be overfitting,
+so all outcomes are reported and no outcome-guided selector is claimed.
 
 \textbf{Prior-work comparison.} This evaluation does not reproduce Heo et
 al.'s instruction-level method, AVR target, or exact MiBench configuration. It therefore
@@ -1049,7 +1141,14 @@ aggregate increases of two instructions and 18 text bytes relative to minimum
 widths. Thus the minimum semantic width and a conventional width are not
 interchangeable optimization choices even when their storage cost is identical;
 neither the allocation guard nor simple rounding predicts their downstream
-profitability.
+profitability. The expanded holdout adds \ExpandedPrograms{} programs and
+repeats the allocation-selection result, retaining \ExpandedSavedBytes{} bytes
+of saving while rejecting two neutral rewrites. Conventional widths reduce
+static instruction counts in \ExpandedWidthBetter{} of
+\ExpandedWidthPrograms{} changed-representation programs, with
+\ExpandedWidthEqual{} ties and \ExpandedWidthWorse{} regressions. This is
+broader evidence for workload-dependent representation effects, alongside
+explicit coverage and dynamic-validation limits.
 
 \balance
 \bibliographystyle{unsrtnat}
