@@ -4,6 +4,10 @@ on:
     branches: ["codex/correctness-width-study"]
   pull_request:
     branches: [main]
+    paths-ignore: ["paper/**", "output/**", "docs/**", "README.md"]
+concurrency:
+  group: research-${{ github.head_ref || github.ref }}
+  cancel-in-progress: true
 permissions:
   contents: read
 jobs:
