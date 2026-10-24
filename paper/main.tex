@@ -17,6 +17,7 @@
 \usepackage[hidelinks]{hyperref}
 
 \input{generated_metrics}
+\input{width_choice_metrics}
 
 \definecolor{codegray}{RGB}{246,247,249}
 \lstdefinelanguage{LLVM}{
@@ -55,11 +56,9 @@
 \author{\textbf{Mitul Swaroop}\\[-1pt]
   \normalsize\texttt{mitulswaroop@gmail.com}
   \and
-  \textbf{Tanishq Tamkoria}\\[-1pt]
-  \normalsize\texttt{[PLACEHOLDER EMAIL]}
+  \textbf{Tanishq Tamkoria}
   \and
-  \textbf{Aryan Mittal}\\[-1pt]
-  \normalsize\texttt{[PLACEHOLDER EMAIL]}}
+  \textbf{Aryan Mittal}}
 \date{}
 
 \begin{document}
@@ -71,9 +70,11 @@
 Unused high bits do not guarantee that narrowing an LLVM memory object reduces
 its target-derived allocation: DataLayout rounding can absorb a legal type-width
 change. We present \textsc{AdaptiveWidthMemoryPass}, a conservative LLVM 18
-prototype for selected stack arrays and internal/private globals. Its isolated
+prototype for selected stack arrays and module-level variables with internal
+or private linkage. Its isolated
 target-aware guard accepts a safe rewrite only when LLVM DataLayout reports a
-smaller complete-object allocation. In a controlled \BenchmarkCount{}-kernel,
+smaller complete-object allocation. The empirical question is how often this
+guard avoids neutral rewrites and how downstream code changes. In a controlled \BenchmarkCount{}-kernel,
 \CandidateTotal{}-candidate evaluation, Method A accepts \ATransformed{}
 objects (\APositive{} positive, \AZero{} neutral), whereas Method B accepts
 \BTransformed{}, all positive; allocation-benefit precision rises from
@@ -82,13 +83,14 @@ objects (\APositive{} positive, \AZero{} neutral), whereas Method B accepts
 \ExternalPrograms{} MiBench programs and \ExternalCandidates{} candidates
 repeats the selection effect: A accepts \ExternalAPositive{} positive and
 \ExternalAZero{} neutral rewrites, while B retains all
-\ExternalBPositive{} positive rewrites and removes both neutral ones
+\ExternalBPositive{} positive rewrites and removes the neutral ones
 (\ExternalAPrecision\% to \ExternalBPrecision\%). Both save
 \ExternalCommonSaved{} bytes on the common set. MiBench O2 IR growth falls from
 \ExternalAOtwoIR{} to \ExternalBOtwoIR{}, but executable sizes increase by
 \ExternalAExecutableDelta{} and \ExternalBExecutableDelta{} bytes. Thus the
-evidence supports target-aware selection precision, not runtime, energy,
-physical-memory, or code-size improvement.
+evidence supports target-aware transformation selection. A separate controlled
+comparison tests conventional widths with the same allocation as minimum safe
+widths. The study makes no runtime, energy, or physical-memory improvement claim.
 \end{abstract}
 
 \noindent\textbf{Keywords:} LLVM, bit-width inference, memory-object narrowing,
@@ -132,7 +134,7 @@ original object.
 
 \subsection{Research Questions}
 
-The evaluation answers four questions bounded by the available measurements:
+The evaluation answers five questions bounded by the available measurements:
 
 \begin{description}[style=nextline,leftmargin=0pt]
   \item[RQ1:] How effectively does the analysis identify evaluated LLVM memory
@@ -145,6 +147,9 @@ The evaluation answers four questions bounded by the available measurements:
   executable-file effects?
   \item[RQ4:] Do baseline and transformed programs produce identical outputs in
   the deterministic differential suite?
+  \item[RQ5:] When a conventional width occupies the same complete-object
+  allocation as the minimum safe width, how does that choice affect static
+  machine-instruction counts and executable-section bytes?
 \end{description}
 
 \subsection{Contributions}
@@ -158,7 +163,10 @@ distinguishes declared IR width from target-derived complete-object allocation;
 and (5) a controlled A/B evaluation showing that neutral rewrites can be removed
 without losing the common-set allocation reduction or differential agreement;
 and (6) external validation on established MiBench programs showing the same
-selection behavior outside the purpose-built kernels.
+selection behavior outside the purpose-built kernels; and (7) a controlled
+allocation-equivalent width comparison reporting static machine-code outcomes
+for every kernel, including regressions. These are scoped implementation and
+empirical contributions; no first-ever bit-width analysis is claimed.
 
 \section{Background}
 
@@ -180,8 +188,8 @@ transformations that depend on partial value information
 which result bits can influence uses \citep{llvmDemandedBits}. ConstantRange
 represents possibly wrapped integer ranges and exposes unsigned and signed
 width queries \citep{llvmConstantRange}. ScalarEvolution reasons about induction
-variables and loop-evolving expressions \citep{llvmScalarEvolution}. The frozen
-MVP directly uses \texttt{computeKnownBits} only as a conservative fallback;
+variables and loop-evolving expressions \citep{llvmScalarEvolution}. The revised
+prototype directly uses \texttt{computeKnownBits} only as a conservative fallback;
 DemandedBits, ConstantRange, and ScalarEvolution are relevant comparison points,
 not hidden features of the implementation.
 
@@ -194,6 +202,12 @@ structures, vector objects, and arbitrary aliases are outside the current
 scope. A recursive use walk recognizes GEP paths and direct loads/stores; a
 second rewriteability check ensures access types agree with the original element
 type before mutation.
+
+Here ``global'' denotes a module-level storage object, not universal access.
+LLVM \texttt{private} linkage restricts direct references to the current module
+and omits the symbol from the object-file symbol table. \texttt{internal}
+linkage also restricts direct references to the module but emits a local symbol,
+corresponding to file-scope \texttt{static} in C \citep{llvmLangRef}.
 
 \section{Related Work}
 
@@ -274,6 +288,11 @@ artifact-aware, and differential validation
 
 \subsection{Research Gap}
 
+The distinction between logical bit width and storage size is established:
+MLIR's rationale explicitly separates type bit width from target-dependent
+storage and register sizes \citep{mlirRationale}. We do not claim to discover
+that distinction or to originate target-aware compiler profitability checks.
+
 Prior work individually covers bit-value inference, range analysis, hardware
 width selection, scalar simplification, memory promotion, and translation
 validation. The narrower gap addressed here is an explicit bridge between two
@@ -309,7 +328,7 @@ This artifact & \checkmark & \checkmark & selected LLVM objects & safety + alloc
 
 \begin{table*}[t]
 \centering
-\caption{Supported and rejected transformation classes in the frozen MVP.}
+\caption{Supported and rejected transformation classes in the revised prototype.}
 \label{tab:classes}
 \small
 \begin{tabular}{p{0.19\textwidth}p{0.34\textwidth}p{0.37\textwidth}}
@@ -334,7 +353,8 @@ Let an eligible object be
 O=\langle T,W,S,L,B,E,P\rangle,
 \]
 where $T$ is the supported object form, $W$ is its original integer element
-width, $S$ is the set of observed store values, $L$ is the set of observed load
+width, $S$ includes the global initializer and all syntactically observed store
+values, $L$ is the set of observed load
 uses, $B$ summarizes inferred bit/value constraints, $E$ is the inferred
 extension family in $\{\mathsf{zero},\mathsf{sign},\mathsf{unknown}\}$, and $P$
 is the recursively observed pointer-use graph. The task is to find an inferred
@@ -361,6 +381,13 @@ mask bounds active high bits; OR takes the compatible maximum; select and PHI
 require compatible incoming families. KnownBits is used only when it proves at
 least one leading zero. Failure on any relevant store marks the candidate as
 insufficiently established.
+
+Extension composition must preserve the intermediate bit pattern. In
+\texttt{zext(sext(x))}, sign-replicated bits in the intermediate value become
+significant unsigned bits. The zero-extension rule therefore retains the full
+intermediate width when its operand was inferred with sign reconstruction.
+For example, \texttt{sext i8 -1 to i16} followed by zero-extension to
+\texttt{i32} is 65535, not 255.
 
 \subsection{Signedness and Extension Handling}
 
@@ -390,7 +417,10 @@ and \emph{SupportedUsers} recursively classify users and reject calls,
 pointer-as-value stores, and unknown consumers. \emph{ValueFits} requires every
 observed store to yield a successful width result. \emph{ConsistentExtension}
 requires one reconstruction family. \emph{RewriteableAccesses} checks the exact
-load/store element types and rejects unsupported cast paths before mutation.
+load/store element types, requires each GEP's source type to agree with its
+parent path's pointee type, and rejects reinterpretation or unsupported cast
+paths before mutation. Rewritten stack objects must be ordinary static allocas
+with allocation count one; dynamic counts and special alloca modes are rejected.
 \emph{OrdinaryMemory} rejects volatile or atomic operations. The final inequality
 is described as a meaningful width reduction, not as a target-aware selection
 policy. If any term cannot be established, the implementation retains the
@@ -423,6 +453,24 @@ the selected extension back to width $W$. Old instructions are erased only after
 their uses have been replaced. LLVM's verifier runs on every transformed test
 artifact.
 
+Rewritten loads and stores use conservative alignment one. Preserving an old
+alignment would be unsound when an array stride shrinks: the second element of
+\texttt{[2 x i16]} can move from byte offset two to offset one after conversion
+to \texttt{[2 x i5]}. An \texttt{align 2} access would then overstate the new
+address's alignment, which LLVM defines as undefined behavior
+\citep{llvmLangRef}. The allocation's base alignment is retained, but it does
+not justify the old alignment at every element.
+
+\subsection{Allocation-Equivalent Conventional Widths}
+
+Method C starts from Method B's minimum inferred width $w$. It considers the
+next width $c$ in $\{8,16,32,64\}$ with $w\leq c<W$, and selects it only when
+$\operatorname{allocSize}_{DL}(T'_O(c))=
+\operatorname{allocSize}_{DL}(T'_O(w))$. Otherwise it retains $w$.
+The safety policy and strict reduction relative to the original object remain
+unchanged. This is a controlled representation-choice baseline, not a claim
+that conventional widths always lower better or a reproduction of prior work.
+
 \begin{figure*}[t]
 \centering
 \includegraphics[width=0.96\textwidth]{figures/pass_architecture.pdf}
@@ -446,7 +494,8 @@ The inference obligation for every admissible store is
 \]
 For the zero family this holds when all discarded high bits are zero. For the
 sign family it holds when discarded bits equal sign replication from bit
-$w-1$. Because the pointer predicate restricts the object to rewritten accesses,
+$w-1$. For defined executions whose reads obtain admitted stored or initializer
+values, the pointer predicate restricts the object to rewritten accesses;
 each admitted load receives the same reconstructed logical value as the original
 load. The argument applies only to the supported transformation class. It is not
 universal formal verification. Static checks establish the local premises;
@@ -501,15 +550,17 @@ C-derived kernels.
 \begin{lstlisting}
 ; before
 %arr = alloca [2 x i16]
+%slot = getelementptr [2 x i16], ptr %arr, i64 0, i64 1
 %m = and i16 %x, 31
-store i16 %m, ptr %slot
-%v = load i16, ptr %slot
+store i16 %m, ptr %slot, align 2
+%v = load i16, ptr %slot, align 2
 
 ; after
 %arr.narrow = alloca [2 x i5]
+%slot.narrow = getelementptr [2 x i5], ptr %arr.narrow, i64 0, i64 1
 %m.narrow = trunc i16 %m to i5
-store i5 %m.narrow, ptr %slot.narrow
-%v.narrow = load i5, ptr %slot.narrow
+store i5 %m.narrow, ptr %slot.narrow, align 1
+%v.narrow = load i5, ptr %slot.narrow, align 1
 %v.wide = zext i5 %v.narrow to i16
 \end{lstlisting}
 \end{minipage}
@@ -522,11 +573,13 @@ sufficient, and zero-extension reconstructs the original logical value.}
 
 \subsection{Research Questions}
 
-RQ1 is answered by candidate, safe, rejected, and transformed counts. RQ2 uses
+RQ1 is answered by candidate, pointer-use-check, rejection, and transformation counts. RQ2 uses
 individual original and narrowed widths from transformation logs. RQ3 compares
 Methods A and B using complete-object DataLayout allocation, allocation-benefit
 precision, raw and O2 IR assignments, and host executable file size in both the
-controlled and external evaluations. RQ4 uses deterministic output comparisons
+controlled and external evaluations. RQ5 compares Method C against B using
+static disassembly instruction counts and object-file text-section bytes.
+RQ4 uses deterministic output comparisons
 for both methods. No research question asks about speed because runtime
 performance is not measured.
 
@@ -542,7 +595,7 @@ exercise analysis behavior, not a representative application benchmark suite.
 
 \subsection{Controlled A/B Evaluation}
 
-Method A is the frozen conservative pass. Method B uses the same LLVM version,
+Method A is the revised conservative pass. Method B uses the same LLVM version,
 \BenchmarkCount{} kernels, C-to-IR inputs, module DataLayout, O2 pipeline,
 runtime harness, and measurement scripts. Its only changed condition is
 $A_1(O,w)<A_0(O)$ after the existing analysis has found $w$ safe. Candidate
@@ -569,7 +622,8 @@ merged with the 39-candidate controlled table.
 
 \subsection{Environment}
 
-Experiments use LLVM and Clang 18 in Ubuntu under WSL on a Windows host. The
+The revised experiments use LLVM and Clang 18.1.3 on Ubuntu 24.04 in GitHub
+Actions. Historical WSL results are superseded by this fresh run. The
 benchmark modules target \texttt{x86\_64-pc-linux-gnu}; their embedded DataLayout
 is the source for all type-allocation measurements. CMake and Ninja build the
 pass plugin. The host-dependent executable-size results
@@ -581,7 +635,7 @@ coarse regression indicator, not end-to-end compile time.
 
 The authoritative comparison JSON is generated from each method's benchmark
 TSV, runtime TSV, individual pass logs, and final test status. It checks that
-safe plus blocked equals all candidates, that runtime pass plus fail equals all
+pointer-use checks passed plus blocked equals all candidates, that runtime pass plus fail equals all
 executed comparisons, and that transformed-object counts, allocation records,
 and width reductions agree with individual logs. The primary static-width
 metric is $\sum_{O}(W_O-w_O)$ over transformed objects; it does not multiply by
@@ -601,6 +655,10 @@ positive transformations divided by all accepted transformations. Percentages
 over each method's accepted set have different denominators, so each
 experiment's direct retention comparison applies both outcomes to Method A's
 common opportunity set.
+Because Method B accepts only positive allocation changes, 100\% precision
+under this same metric follows from its acceptance rule. The empirical evidence
+is the occurrence of neutral opportunities, their exclusion without losing
+positive opportunities, and the observed downstream effects.
 Allocation size includes DataLayout alignment rounding; emitted logs also
 retain original/transformed ABI alignment. This is not a universal
 physical-memory or peak-runtime-footprint measurement.
@@ -643,6 +701,25 @@ compile C files: 211 MiBench units plus the test-suite support tools
 paper uses \path{tools/build_paper.ps1}. Generated IR, logs, executables, TSVs,
 JSON, tables, figures, and the final PDF remain available for audit.
 
+The revised safety suite additionally executes eight baseline/transformed
+executables across O0 and O2. Each checks all 256 inputs of the nested-extension
+case and all 65536 inputs of four addressing cases. FileCheck checks the repaired
+alignment and the retention of unsupported GEP paths. These focused exhaustive
+input domains strengthen regression coverage without proving the whole pass.
+
+\subsection{Width-Choice Experiment}
+
+\path{tools/width_choice_experiment.py} runs Methods B and C on all
+\BenchmarkCount{} controlled kernels. It matches accepted objects by kernel,
+kind and name, asserts identical complete-object allocation for both
+representations, and preserves every result, including ties and regressions.
+Clang 18 compiles each original/B/C module to an O2 object file.
+\texttt{llvm-objdump-18} supplies static instruction counts, including alignment
+NOPs and all emitted functions; \texttt{llvm-size-18} supplies text-section
+bytes. These are neither dynamically executed instruction counts nor timings.
+The same deterministic runtime harness independently checks B and C against
+the original program. Width-choice results are not extrapolated to MiBench.
+
 \section{Results}
 
 \subsection{Transformation Coverage}
@@ -650,10 +727,12 @@ JSON, tables, figures, and the final PDF remain available for audit.
 Across \BenchmarkCount{} kernels, both methods encounter \CandidateGlobals{}
 candidate globals and \CandidateAllocas{} candidate allocas, for
 \CandidateTotal{} candidates. Both classify \SafeCandidates{} pointer/use
-graphs as safe and \BlockedCandidates{} as blocked. Method A accepts
+graphs as passing pointer-use checks and \BlockedCandidates{} as blocked.
+Passing this preliminary check is not the full \textsf{Safe} predicate:
+value inference and rewriteability can still fail. Method A accepts
 \ATransformed{} transformations. Method B accepts \BTransformed{} because the
 three safe but allocation-neutral opportunities fail only the new guard. Thus
-candidate discovery and safety classification are identical, as required by
+candidate discovery and pointer-use classification are identical, as required by
 the controlled design.
 
 \subsection{Width Reduction}
@@ -765,7 +844,7 @@ The evaluation covers \ExternalPrograms{} MiBench programs comprising
 \ExternalCompilationUnits{} unmodified C compilation units; all attempted
 programs compile. The pass encounters
 \ExternalCandidates{} candidate memory objects: \ExternalSafe{} are
-safety-safe and \ExternalBlocked{} are blocked. Candidate enumeration is broad
+passing pointer-use checks and \ExternalBlocked{} are blocked. Candidate enumeration is broad
 and includes internal integer arrays such as strings that are then
 conservatively rejected; transformation counts must therefore not be confused
 with program counts. Method A transforms \ExternalATransformed{} objects:
@@ -804,6 +883,34 @@ the rebuilt baseline and the original packaged test-suite executable, so no
 baseline/transformed comparison is meaningful for that command. It remains a
 reported harness/data compatibility skip, not a transformation failure.
 
+\subsection{Allocation-Equivalent Width Outcomes}
+
+\input{tables/width_choice}
+
+Methods B and C accept the same \WidthObjects{} objects. Conventional-width
+selection changes \WidthChangedObjects{} representations across
+\WidthChangedKernels{} of the \WidthKernels{} kernels without changing their
+complete-object allocation. Among those changed kernels, C has fewer static
+machine instructions in \WidthInstructionBetter{}, the same count in
+\WidthInstructionEqual{}, and more in \WidthInstructionWorse{}.
+Text-section size is smaller in \WidthTextBetter{}, equal in
+\WidthTextEqual{}, and larger in \WidthTextWorse{}.
+The aggregate C-minus-B deltas over all kernels are
+\WidthInstructionDelta{} machine instructions and \WidthTextDelta{} text bytes.
+Both methods agree with the baseline on all \WidthRuntimePassed{} deterministic
+runtime comparisons. These results answer RQ5 for this target and workload;
+the policy is not selected using the measured outcomes.
+
+Three kernels account for all nonzero C-minus-B code changes.
+\texttt{select\_ranges} changes from 12 to 7 machine instructions and from
+27 to 15 text bytes; the conventional-width output eliminates the conditional
+selection sequence visible in the minimum-width disassembly.
+\texttt{protocol\_version\_table} changes from 11 to 12 instructions and
+24 to 25 bytes. \texttt{unsigned\_histogram} changes from 30 to 36 instructions
+and 69 to 98 bytes; its conventional-width output contains vector loads and
+packing instructions absent from the minimum-width output. These are direct
+disassembly observations, not a claim that vectorization is generally harmful.
+
 \section{Discussion}
 
 The controlled evaluation yields eight bounded findings. First, a safe
@@ -839,16 +946,7 @@ performance. The results do not show that arbitrary-width memory is always
 densely laid out, that final stack frames or linked images realize the same
 saving, or that this method dominates prior bit-level optimization.
 
-An exploratory investigation on a separate experimental branch examined
-allocation-equivalent safe widths after Method B. Across 23 accepted objects,
-one controlled kernel benefited from an additional semantic bit: both
-\texttt{i7} and \texttt{i8} enabled downstream simplification and reduced the
-measured instruction count, whereas other choices introduced target-dependent
-regressions through SLP vectorization or backend instruction selection. Thus
-unchanged DataLayout allocation does not imply identical downstream behavior,
-but these sparse mixed outcomes do not establish a reliable general width
-selector. They motivate broader independent validation and richer
-optimization-aware modeling rather than a new principal contribution here.
+The width-choice comparison isolates a second decision after allocation benefit: which safe representation to use within an allocation-equivalent class. Its complete kernel-level outcomes distinguish observed code-generation effects from a claim of universal profitability.
 
 \section{Limitations and Threats to Validity}
 
@@ -901,11 +999,7 @@ implemented predicates; LLVM verification checks structural validity; runtime
 tests provide finite evidence. There is no mechanized proof or translation
 validation of every rewrite.
 
-\textbf{Exploratory width selection.} The separate allocation-equivalent-width
-study does not provide a dependable general selector. Its positive result is
-concentrated in one controlled kernel, while other choices are neutral or
-target-dependently regressive. Method C therefore remains exploratory future
-work and is not part of the validated Method A/B contribution.
+\textbf{Width-choice validity.} Method C is evaluated only on the controlled kernels, one target and one compiler release. Static instruction counts include padding NOPs; text-section changes do not establish execution-time changes. A per-kernel choice made after inspecting these results would be overfitting, so all results are reported and no outcome-guided selector is claimed.
 
 \textbf{Prior-work comparison.} This evaluation does not reproduce Heo et
 al.'s instruction-level method, AVR target, or exact MiBench configuration. It therefore
@@ -917,7 +1011,7 @@ are not attributed to their implementation.
 
 Future work can broaden memory-object forms to structures and heap allocations,
 introduce alias-aware and interprocedural reasoning, and enrich range inference
-with ConstantRange or ScalarEvolution. The completed exploratory investigation
+with ConstantRange or ScalarEvolution. The controlled investigation
 of allocation-equivalent safe widths showed that downstream LLVM optimization
 can favor different representations even when target allocation is unchanged.
 Future selection research should therefore model vectorization profitability,
@@ -926,7 +1020,7 @@ target-specific lowering effects, followed by independent validation across
 broader benchmark suites, LLVM releases, and target architectures. Additional
 evaluation can include randomized and property-based differential workloads,
 measured allocation layouts, embedded hardware energy experiments, and
-independent translation validation. These are extensions to the frozen
+independent translation validation. These are extensions to the revised
 baseline, not features claimed by the current artifact.
 
 \section{Conclusion}
@@ -944,7 +1038,15 @@ shows an O2 IR delta change from \ExternalAOtwoIR{} to \ExternalBOtwoIR{}, but
 executable sizes still increase slightly under both methods. The contribution
 is therefore improved transformation-selection precision and target-aware
 allocation reasoning, not demonstrated runtime, energy, physical-memory, or
-code-size improvement.
+code-size improvement for the A/B executable-file comparison. The new
+allocation-equivalent-width experiment changes 17 object representations in
+14 kernels with no allocation change: conventional widths improve static
+instruction counts in one kernel, tie in eleven, and regress in two, with
+aggregate increases of two instructions and 18 text bytes relative to minimum
+widths. Thus the minimum semantic width and a conventional width are not
+interchangeable optimization choices even when their storage cost is identical;
+neither the allocation guard nor simple rounding predicts their downstream
+profitability.
 
 \balance
 \bibliographystyle{unsrtnat}

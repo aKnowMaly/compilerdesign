@@ -456,7 +456,7 @@ def tables(
     (TAB / "benchmark_categories.tex").write_text(
         """\\begin{table}[t]
 \\centering
-\\caption{Benchmark-suite composition. Candidate and transformed-object counts may exceed kernel counts.}
+\\caption{Method A benchmark-suite composition. Candidate and transformed-object counts may exceed kernel counts.}
 \\label{tab:categories}
 \\small
 \\begin{tabular}{lrrr}
@@ -478,7 +478,7 @@ Measure & Count \\\\
 Candidate globals & {data['candidate_globals']} \\\\
 Candidate allocas & {data['candidate_allocas']} \\\\
 All candidates & {data['candidate_total']} \\\\
-Safe candidates & {data['safe_candidates']} \\\\
+Pointer-use checks passed & {data['safe_candidates']} \\\\
 Rejected candidates & {data['blocked_candidates']} \\\\
 Transformed globals & {data['transformed_globals']} \\\\
 Transformed allocas & {data['transformed_allocas']} \\\\
@@ -490,7 +490,7 @@ All transformed objects & {data['transformed_total']} \\\\
     (TAB / "coverage.tex").write_text(coverage, encoding="utf-8")
     width_stats = f"""\\begin{{table}}[t]
 \\centering
-\\caption{{Static declared-element width reduction. These values are not measured runtime memory savings.}}
+\\caption{{Method A static declared-element width reduction. These values are not measured runtime memory savings.}}
 \\label{{tab:width}}
 \\small
 \\begin{{tabular}}{{lr}}
@@ -515,7 +515,7 @@ Median per transformed object & {float(data['static_per_element_width_reduction_
     )
     width_transitions = """\\begin{table}[t]
 \\centering
-\\caption{Observed integer element-width transitions. Counts are transformed objects.}
+\\caption{Method A integer element-width transitions. Counts are transformed objects.}
 \\label{tab:width-transitions}
 \\small
 \\begin{tabular}{rrrr}
@@ -617,7 +617,7 @@ Failed & {data['runtime_differential_failed']} \\\\
 \\toprule
 Metric & A: conservative & B: + allocation guard \\\\
 \\midrule
-Candidates / safety-safe / safety-blocked & {a['candidates']} / {data['safe_candidates']} / {data['blocked_candidates']} & {b['candidates']} / {data['safe_candidates']} / {data['blocked_candidates']} \\\\
+Candidates / use-pass / use-blocked & {a['candidates']} / {data['safe_candidates']} / {data['blocked_candidates']} & {b['candidates']} / {data['safe_candidates']} / {data['blocked_candidates']} \\\\
 Transformed objects & {a['transformed']} & {b['transformed']} \\\\
 Positive / zero / negative & {a['positive']} / {a['zero']} / {a['negative']} & {b['positive']} / {b['zero']} / {b['negative']} \\\\
 Declared-width reduction & {a['declared_width_reduction_bits']} bits & {b['declared_width_reduction_bits']} bits \\\\
@@ -669,7 +669,7 @@ Category & A n & B n & A positive & B positive \\\\
 \toprule
 Metric & A: conservative & B: + allocation guard \\
 \midrule
-Candidates / safety-safe / safety-blocked & {external['total_candidates']} / {external['safety_safe']} / {external['safety_blocked']} & {external['total_candidates']} / {external['safety_safe']} / {external['safety_blocked']} \\
+Candidates / use-pass / use-blocked & {external['total_candidates']} / {external['safety_safe']} / {external['safety_blocked']} & {external['total_candidates']} / {external['safety_safe']} / {external['safety_blocked']} \\
 Transformed objects & {ext_a['transformed']} & {ext_b['transformed']} \\
 Positive / neutral / negative & {ext_a['positive']} / {ext_a['zero']} / {ext_a['negative']} & {ext_b['positive']} / {ext_b['zero']} / {ext_b['negative']} \\
 Allocation-benefit precision & {float(ext_a['allocation_benefit_precision_percent']):.2f}\% & {float(ext_b['allocation_benefit_precision_percent']):.2f}\% \\
@@ -686,6 +686,7 @@ Differential pass / fail / skip & {ext_a['differential_passed']} / {ext_a['diffe
 
 
 def main() -> None:
+    from generate_width_choice_assets import generate
     FIG.mkdir(parents=True, exist_ok=True)
     TAB.mkdir(parents=True, exist_ok=True)
     data = json.loads(EVAL.read_text(encoding="utf-8"))
@@ -713,6 +714,7 @@ def main() -> None:
     ab_selection(comparison)
     ab_ir_effects(comparison)
     tables(data, bench, widths, comparison, comparison_categories, external)
+    generate()
     print(FIG)
     print(TAB)
 

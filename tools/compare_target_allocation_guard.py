@@ -244,7 +244,7 @@ def main() -> None:
         "guard_rejected_objects": omitted,
         "baseline_a_rejection_reasons": dict(baseline_reasons),
         "experiment_b_rejection_reasons": dict(guard_reasons),
-        "experiment_c": {
+        "prior_art_reproduction": {
             "implemented": False,
             "assessment": "not feasible as a fair small extension",
             "reason": "A faithful comparison would require reconstructing instruction-level bit-usage propagation, conversion cleanup, byte-oriented width selection, AVR lowering, and the original MiBench setup; the current object-level suite cannot establish equivalence to Heo et al.'s implementation.",
@@ -295,7 +295,7 @@ def main() -> None:
             "",
             "The accepted-object percentage changes denominator because Experiment B rejects allocation-neutral objects. On the common 26-object opportunity set, both methods reduce 150 to 83 bytes (67 bytes, 44.67%); the guard improves allocation-benefit precision and avoids neutral rewrites rather than increasing absolute allocation savings.",
             "",
-            "Experiment C was not implemented: a fair prior-art-style baseline would require substantial reconstruction of Heo et al.'s instruction-level and AVR-specific method.",
+            "Heo et al.'s prior-art pipeline was not reproduced. The separate Method C allocation-equivalent width comparison is implemented in tools/width_choice_experiment.py; it is not a reproduction of that instruction-level AVR method.",
         ]
     )
     (OUT_DIR / "summary.md").write_text("\n".join(md) + "\n", encoding="utf-8")

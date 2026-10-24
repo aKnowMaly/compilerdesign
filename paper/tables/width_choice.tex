@@ -1,0 +1,20 @@
+\begin{table}[t]
+\centering
+\caption{Controlled allocation-equivalent width comparison. Machine instructions
+and text bytes are static object-code totals over all 32 kernels; outcome
+partitions include only kernels with a changed representation.}
+\label{tab:width-choice}
+\scriptsize
+\begin{tabular}{@{}lrr@{}}
+\toprule
+Metric & B: minimum & C: conventional \\
+\midrule
+Accepted objects & 23 & 23 \\
+Common original allocation & 134 B & 134 B \\
+Common result allocation & 67 B & 67 B \\
+Machine instructions & 367 & 369 \\
+Text-section bytes & 878 & 896 \\
+Differential agreement & 32/32 & 32/32 \\
+\bottomrule
+\end{tabular}
+\end{table}

@@ -2,11 +2,12 @@ name: Correctness and research evidence
 on:
   push:
     branches: ["codex/correctness-width-study"]
+    paths-ignore: ["paper/**", "output/**", "docs/**", "research/**", "README.md"]
   pull_request:
     branches: [main]
     paths-ignore: ["paper/**", "output/**", "docs/**", "README.md"]
 concurrency:
-  group: research-${{ github.head_ref || github.ref }}
+  group: research-${{ github.head_ref || github.ref_name }}
   cancel-in-progress: true
 permissions:
   contents: read
@@ -34,6 +35,42 @@ jobs:
         run: bash tools/external_benchmark_experiment.sh
       - name: Generate paper tables and figures
         run: python3 tools/generate_paper_assets.py
+      - name: Compile revised paper
+        run: |
+          curl --fail --location --retry 3 https://github.com/tectonic-typesetting/tectonic/releases/download/tectonic%400.15.0/tectonic-0.15.0-x86_64-unknown-linux-musl.tar.gz --output build/tectonic.tar.gz
+          tar -xzf build/tectonic.tar.gz -C build
+          mkdir -p output/pdf
+          (cd paper && ../build/tectonic -X compile main.tex --outdir ../output/pdf --keep-logs)
+          mv output/pdf/main.pdf output/pdf/adaptive-width-memory-narrowing-paper.pdf
+      - name: Upload compact research snapshot and paper
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: research-snapshot-and-paper
+          path: |
+            build/safety-regressions/results.json
+            build/safety-regressions/*.ll
+            build/final-evaluation/*.json
+            build/final-evaluation/*.tsv
+            build/final-evaluation/*.md
+            build/final-test-status.tsv
+            build/target-allocation-comparison/*.json
+            build/target-allocation-comparison/*.tsv
+            build/target-allocation-comparison/*.md
+            build/width-choice/results.json
+            build/width-choice/objects.tsv
+            build/width-choice/benchmarks.tsv
+            build/width-choice/summary.md
+            build/width-choice/machine/*.asm
+            build/external-benchmark-validation/*.json
+            build/external-benchmark-validation/*.tsv
+            build/external-benchmark-validation/*.md
+            paper/generated_metrics.tex
+            paper/width_choice_metrics.tex
+            paper/tables/
+            paper/figures/
+            output/pdf/
+          retention-days: 14
       - name: Upload reproducible evidence
         if: always()
         uses: actions/upload-artifact@v4
