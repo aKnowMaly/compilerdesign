@@ -11,6 +11,7 @@ if [[ ! -f "$ROOT_DIR/build/build.ninja" ]]; then
 fi
 
 cmake --build "$ROOT_DIR/build"
+python3 "$ROOT_DIR/tests/safety_regressions.py"
 
 opt-18 -load-pass-plugin="$PLUGIN" -passes=adaptive-width-mem \
   -verify-each -disable-output "$ROOT_DIR/tests/smoke.ll"
@@ -75,7 +76,7 @@ FileCheck-18 "$ROOT_DIR/tests/target_allocation_guard.ll" --check-prefix=IR \
 FileCheck-18 "$ROOT_DIR/tests/target_allocation_guard.ll" --check-prefix=LOG \
   --input-file "$ROOT_DIR/build/target_allocation_guard.log"
 
-"$ROOT_DIR/tools/demo_report.sh" > "$ROOT_DIR/build/demo_report.stdout"
+bash "$ROOT_DIR/tools/demo_report.sh" > "$ROOT_DIR/build/demo_report.stdout"
 FileCheck-18 "$ROOT_DIR/examples/report.check" \
   --input-file "$ROOT_DIR/build/demo_report.stdout"
 
@@ -101,7 +102,7 @@ grep -q $'\tFAIL\t' "$ROOT_DIR/build/runtime-differential/runtime-differential.t
   exit 1
 }
 
-printf 'status\tllvm_version\tcompiler\tenvironment\npassed\t18\tclang-18\tWSL Ubuntu on Windows\n' > "$TEST_STATUS"
+printf 'status\tllvm_version\tcompiler\tenvironment\npassed\t18\tclang-18\t%s\n' "$(uname -srm)" > "$TEST_STATUS"
 python3 "$ROOT_DIR/tools/final_evaluation.py" > "$ROOT_DIR/build/final_evaluation.stdout"
 
 echo "adaptive-width-mem tests passed"

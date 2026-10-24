@@ -1,0 +1,52 @@
+name: Correctness and research evidence
+on:
+  push:
+    branches: ["codex/correctness-width-study"]
+  pull_request:
+    branches: [main]
+permissions:
+  contents: read
+jobs:
+  validate:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    env:
+      LLVM_DIR: /usr/lib/llvm-18/lib/cmake/llvm
+      JOBS: "4"
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install LLVM 18 and build dependencies
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y clang-18 llvm-18-dev llvm-18-tools cmake ninja-build python3-reportlab
+          echo /usr/lib/llvm-18/bin >> "$GITHUB_PATH"
+      - name: Build, regression tests, and controlled evaluation
+        run: bash tests/run_tests.sh
+      - name: Target allocation comparison
+        run: bash tools/target_allocation_experiment.sh
+      - name: Allocation-equivalent width comparison
+        run: python3 tools/width_choice_experiment.py
+      - name: External MiBench validation
+        run: bash tools/external_benchmark_experiment.sh
+      - name: Generate paper tables and figures
+        run: python3 tools/generate_paper_assets.py
+      - name: Upload reproducible evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: research-evidence
+          path: |
+            build/safety-regressions/
+            build/benchmark-metrics/
+            build/runtime-differential/
+            build/final-evaluation/
+            build/final-test-status.tsv
+            build/target-allocation-comparison/
+            build/target-allocation-guard/
+            build/target-allocation-guard-runtime/
+            build/width-choice/
+            build/external-benchmark-validation/
+            paper/generated_metrics.tex
+            paper/tables/
+            paper/figures/
+          retention-days: 14
