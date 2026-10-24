@@ -1,0 +1,30 @@
+{
+  "run_url": "https://github.com/aKnowMaly/compilerdesign/actions/runs/40112839035",
+  "validated_commit": "c5fd663ee0b07163e494a287150c3a121e7c258a",
+  "pass_source_sha256": "0695145aef63b272b147124ebea137dde9da2c6a92c80c6721cc63f4cef73949",
+  "files_sha256": {
+    "build/width-choice/results.json": "5718417372621f26f87ee880e4311334401feef090c62fdcffdd46ae1c3dd88b",
+    "build/width-choice/objects.tsv": "dc351938651b1e638724b3356c8adb995799f6006e7fe91a149df0b683f34ab9",
+    "build/width-choice/benchmarks.tsv": "fd13bf47065f170ad59131327a4ceea9358f36beb1834ef5b7ae2656eff59dba",
+    "build/width-choice/summary.md": "deaa5611cac7fd18832dcda67f877108de570130daf2aa198945c0c1e123386b",
+    "build/target-allocation-comparison/comparison.json": "cf927b8843301560f8064c77989316ecc1b31796f6707ae9d773289c314c43d2",
+    "build/target-allocation-comparison/methods.tsv": "f5eeb8e605c42b783fc8ec5492dee20ab4d4cb6be5a471bee8baa8d0e44c19ed",
+    "build/target-allocation-comparison/categories.tsv": "08424e46a45d11b3da74014f4a3b2f096a7819025254a22cb96fb0c617603458",
+    "build/external-benchmark-validation/results.json": "882e4d489fd36bc4a26466595f92de3062c76628120fc1377fc6ede21e051155",
+    "build/external-benchmark-validation/programs.tsv": "da43d873b928f78eed44bb4b65a6f65c3fac9e0cbbf446fdc43c20c94be2f45c",
+    "build/external-benchmark-validation/candidates.tsv": "b1f2f943d4e221b008421a1be739160889988820f3ae11cf64f5625a0dcbbf63",
+    "build/external-benchmark-validation/rejection-reasons.tsv": "0acb2a988d98db2acaebefb258d2a92138a9d57c788731edae8c6e53521927f6",
+    "build/safety-regressions/results.json": "3a37cd5da8f40801ba3f49fe4a3972292f52bcba83766fcbaa41b7c2886c2fb2",
+    "build/final-evaluation/final-evaluation.json": "651442698af1462450288d0862849836cebeb473b0f5d1c73de1538c3eb0804b",
+    "build/final-test-status.tsv": "352c11c9e414516df508f137f979412f340288b45dc9f5657b0e7b81d35af02c",
+    "build/width-choice/machine/select_ranges.original.asm": "759e62c61b80078e2a4ccebabb715605f44ced452a1d09bef8fc0edb83970e05",
+    "build/width-choice/machine/select_ranges.minimum.asm": "cd972d61509269e6041954eff48033da0920edfd0745eafccf8d2e0fed077fb1",
+    "build/width-choice/machine/select_ranges.native.asm": "c68c53df29c123c86b4c663dabf122c28846402da929c25739716e7b59fb9583",
+    "build/width-choice/machine/protocol_version_table.original.asm": "c16148748b7eded081a41c55e3e04b3b2fe25f64d2381609560e7f1268e60716",
+    "build/width-choice/machine/protocol_version_table.minimum.asm": "4c077cd233295edff45755616bbee1252e880b1bc1b218dc76758647d32b9dd0",
+    "build/width-choice/machine/protocol_version_table.native.asm": "8e66ab29e930c9034758ed892ca50f04c3eee68f7265149f97f0f8f9f9a5694d",
+    "build/width-choice/machine/unsigned_histogram.original.asm": "6ebd2d71afd3412972e963f27341c19601be0d861256351ff5486766534dcc72",
+    "build/width-choice/machine/unsigned_histogram.minimum.asm": "e5cec9ba93c5c578424e5e7725a79351261f9a3e004207b7b3f29308300d2d10",
+    "build/width-choice/machine/unsigned_histogram.native.asm": "6355c7628c308c30b1721e8469a9975b51eb5537eb4230a845a3d8ddec212f84"
+  }
+}

@@ -63,6 +63,11 @@ fields `safe`/`blocked` classify pointer users only, not the full safety predica
 
 ## Complete validation and final evidence
 
+The permanent revised evidence is in `research/revision-2026-10-24/`, with the
+full compact snapshot in `evidence.zip` and an explanation in
+`docs/research-revision.md`. Previously checked-in `build/` artifacts are
+historical generated outputs; rerun the commands below for current artifacts.
+
 The complete runner builds the plugin, checks fixtures with LLVM verification
 and FileCheck, evaluates all benchmarks, compiles and compares baseline and
 transformed executables, writes binary-size evidence, regenerates tables, and

@@ -62,6 +62,7 @@
 \date{}
 
 \begin{document}
+\raggedbottom
 \maketitle
 \nocite{heo2025bitlevel,mahlke2001bitwidth,nandivada2013packing,bhaskaracharya2016storage,lee2006accuracy,jain2019executable,cherubin2020survey,jantz2014phase,zhou2021bugs,evenmendoza2022csmith}
 \vspace{-0.35in}
@@ -149,7 +150,7 @@ The evaluation answers five questions bounded by the available measurements:
   the deterministic differential suite?
   \item[RQ5:] When a conventional width occupies the same complete-object
   allocation as the minimum safe width, how does that choice affect static
-  machine-instruction counts and executable-section bytes?
+  machine-instruction counts and object-file text-section bytes?
 \end{description}
 
 \subsection{Contributions}
@@ -463,7 +464,9 @@ not justify the old alignment at every element.
 
 \subsection{Allocation-Equivalent Conventional Widths}
 
-Method C starts from Method B's minimum inferred width $w$. It considers the
+Method C starts from Method B's minimum inferred width $w$. Here minimum means
+the width selected by the implemented rules, not a globally optimal width.
+It considers the
 next width $c$ in $\{8,16,32,64\}$ with $w\leq c<W$, and selects it only when
 $\operatorname{allocSize}_{DL}(T'_O(c))=
 \operatorname{allocSize}_{DL}(T'_O(w))$. Otherwise it retains $w$.
