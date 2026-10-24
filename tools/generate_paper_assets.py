@@ -687,6 +687,7 @@ Differential pass / fail / skip & {ext_a['differential_passed']} / {ext_a['diffe
 
 def main() -> None:
     from generate_width_choice_assets import generate
+    from generate_expanded_corpus_assets import generate as generate_expanded
     FIG.mkdir(parents=True, exist_ok=True)
     TAB.mkdir(parents=True, exist_ok=True)
     data = json.loads(EVAL.read_text(encoding="utf-8"))
@@ -715,6 +716,7 @@ def main() -> None:
     ab_ir_effects(comparison)
     tables(data, bench, widths, comparison, comparison_categories, external)
     generate()
+    generate_expanded()
     print(FIG)
     print(TAB)
 

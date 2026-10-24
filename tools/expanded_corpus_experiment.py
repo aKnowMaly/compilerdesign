@@ -112,6 +112,8 @@ def execute(test, executable, destination):
     record = {"status":"OK" if process.returncode == 0 else "ERROR", "returncode":process.returncode,
               "stdout_sha256":sha(process.stdout), "stderr_sha256":sha(process.stderr),
               "stdout_bytes":len(process.stdout), "stderr_bytes":len(process.stderr), "generated_files":generated}
+    if process.returncode:
+        record["reason"] = f"exit-code-{process.returncode}: " + process.stderr.decode("utf-8",errors="replace")[:240]
     record["signature"] = sha(json.dumps({k:record[k] for k in ("stdout_sha256","stderr_sha256","generated_files")},sort_keys=True).encode())
     record["has_observable_output"] = bool(process.stdout or process.stderr or generated)
     return record
@@ -180,9 +182,16 @@ def evaluate(spec):
         repeated = execute(test,binaries["original"],output/"runtime-repeat") if baseline["status"] == "OK" else baseline
         repeatable = baseline["status"] == repeated["status"] == "OK" and baseline["signature"] == repeated["signature"]
         (output/"baseline-runtime.json").write_text(json.dumps({"baseline":baseline,"repeat":repeated},indent=2))
+        if baseline["status"] != "OK":
+            official = execute(test,directory/target,output/"runtime-official")
+            (output/"official-runtime.json").write_text(json.dumps(official,indent=2))
+            record["official_runtime_status"] = official["status"]
+            record["official_runtime_reason"] = official.get("reason","")
         record["baseline_repeatable"] = repeatable
         record["output_strength"] = "OBSERVABLE" if baseline.get("has_observable_output") else "EXIT_ONLY"
-        record["baseline_runtime_reason"] = "" if repeatable else baseline.get("reason",baseline.get("status",""))
+        record["baseline_runtime_reason"] = "" if repeatable else (
+            "non-repeatable-baseline-output" if baseline["status"]==repeated["status"]=="OK"
+            else baseline.get("reason",baseline.get("status","")))
         for method in CONFIG["methods"]:
             result = execute(test,binaries[method],output/f"runtime-{method}") if repeatable else {"status":"SKIP"}
             (output/f"runtime-{method}.json").write_text(json.dumps(result,indent=2))
@@ -252,11 +261,19 @@ def main():
                "width_instruction_worse":sum(r["C_machine_instructions"]>r["B_machine_instructions"] for r in eligible),
                "BC_allocation_mismatches":sum(not r["BC_allocation_matched"] for r in evaluated),
                "limitations":"Programs are clustered by family; source-set hashes detect exact source duplicates, not algorithmic similarity. No runtime speed or energy measurement. Raw output equivalence is tested only against repeatable successful baselines."}
+    previous = {source_identity(entries)[0] for entries in old.compile_entries().values() if entries}
+    current = {r["source_set_sha256"] for r in evaluated}
+    summary["source_sets_shared_with_mibench"] = len(previous & current)
+    summary["unique_external_source_sets_including_mibench"] = len(previous | current)
+    summary["protocol_sha256"] = sha((ROOT/"benchmarks/external-corpus.json").read_bytes())
     for method in CONFIG["methods"]:
         summary[method]={k:sum(r[f"{method}_{k}"] for r in evaluated) for k in ("candidates","transformed","positive","neutral","saved_bytes")}
         summary[method].update({s.lower():sum(r[f"{method}_differential"]==s for r in evaluated) for s in ("PASS","FAIL","SKIP")})
         summary[method]["programs_transformed"]=sum(r[f"{method}_transformed"]>0 for r in evaluated)
         summary[method]["observable_passes"]=sum(r[f"{method}_differential"]=="PASS" and r["output_strength"]=="OBSERVABLE" for r in evaluated)
+    summary["width_instruction_delta_C_minus_B"] = sum(r["C_machine_instructions"]-r["B_machine_instructions"] for r in eligible)
+    summary["width_text_delta_C_minus_B"] = sum(r["C_text_bytes"]-r["B_text_bytes"] for r in eligible)
+    summary["runtime_validated_width_choice_programs"] = sum(r["B_differential"]==r["C_differential"]=="PASS" for r in eligible)
     families=[]
     for family in sorted({r["family"] for r in records}):
         group=[r for r in evaluated if r["family"]==family]
@@ -266,6 +283,7 @@ def main():
     tsv(OUT/"families.tsv",families)
     (OUT/"results.json").write_text(json.dumps(summary,indent=2)+"\n")
     (OUT/"summary.md").write_text("# Expanded external corpus\n\n```json\n"+json.dumps(summary,indent=2)+"\n```\n")
+    run(["python3",ROOT/"tests/check_expanded_results.py",OUT])
     print(json.dumps(summary,indent=2),flush=True)
     if summary["status_counts"].get("EVALUATION_FAILED",0) or any(summary[m]["fail"] for m in CONFIG["methods"]):
         raise SystemExit("Evaluation failures preserved in reports; investigate before claiming validity")

@@ -56,6 +56,7 @@ jobs:
             build/final-evaluation/*.tsv
             build/final-evaluation/*.md
             build/final-test-status.tsv
+            build/benchmark-metrics/benchmark-metrics.tsv
             build/target-allocation-comparison/*.json
             build/target-allocation-comparison/*.tsv
             build/target-allocation-comparison/*.md
@@ -75,9 +76,12 @@ jobs:
             build/expanded-corpus/official-build.log
             build/expanded-corpus/programs/*/error.txt
             build/expanded-corpus/programs/*/baseline-runtime.json
+            build/expanded-corpus/programs/*/official-runtime.json
             build/expanded-corpus/programs/*/runtime-*.json
+            build/expanded-corpus/programs/*/runtime-*.stderr
             paper/generated_metrics.tex
             paper/width_choice_metrics.tex
+            paper/expanded_corpus_metrics.tex
             paper/tables/
             paper/figures/
             output/pdf/
